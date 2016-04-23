@@ -7,13 +7,14 @@
 // ==========================================================================================
 
 #pragma once
+#include <memory>
+#include <string>
 #include <map>
 #include <cassert>
-#include <memory>
 
 namespace Cr
 {
-	class Identifier {};
+	struct Identifier { std::string m_Value; Identifier(std::string const& s): m_Value(s) {} };
 	typedef Identifier* PIdentifier;
 	typedef std::map<std::string, std::unique_ptr<Identifier>> IdentifierTable;
 
@@ -39,7 +40,7 @@ namespace Cr
 
 			// Preprocessor keywords.
 			KwPpDefine, KwPpUndef, KwPpDefined,
-			KwPpIf = KwIf, KwPpIfdef = KwPpDefined + 1, KwPpIfndef, KwPpElse = KwElse, KwPpElif = KwPpIfndef + 1, KwPpEndif,
+			KwPpIf = (int)KwIf, KwPpIfdef = (int)KwPpDefined + 1, KwPpIfndef, KwPpElse = (int)KwElse, KwPpElif = (int)KwPpIfndef + 1, KwPpEndif,
 			KwPpPragma, KwPpLine, KwPpError,
 
 			// Operators
@@ -48,7 +49,7 @@ namespace Cr
 			OpNot, OpAnd, OpOr,
 			OpBitwiseNot, OpBitwiseAnd, OpBitwiseOr, OpBitwiseXor, OpBitwiseLeftShift, OpBitwiseRightShift,
 			OpAddAssign, OpSubtractAssign, OpMultiplyAssign, OpDivideAssign, OpModuloAssign, OpBitwiseAndAssign, OpBitwiseOrAssign, OpBitwiseXorAssign, OpBitwiseLeftShiftAssign, OpBitwiseRightShiftAssign,
-			OpScopeBegin, OpScopeEnd, OpSubindexBegin, OpSubindexEnd, OpPenthesesBegin, OpPenthesesEnd,
+			OpScopeBegin, OpScopeEnd, OpSubindexBegin, OpSubindexEnd, OpParenthesesBegin, OpParenthesesEnd,
 			OpSemicolon, OpColon, OpComma, OpDot, OpTernary,
 			OpPreprocessor, OpPreprocessorGlue,
 
@@ -128,8 +129,6 @@ namespace Cr
 			return m_ValueID;
 		}
 		/// @}
-
-		void __DebugPrint() const;
 
 	};	// class Lexeme final
 

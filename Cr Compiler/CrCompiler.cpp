@@ -6,10 +6,6 @@
 // terms of Goddamn Industries End User License Agreement.
 // ==========================================================================================
 
-namespace Cr
-{
-}
-
 int main()
 {
 }

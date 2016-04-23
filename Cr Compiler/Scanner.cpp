@@ -7,7 +7,6 @@
 // ==========================================================================================
 
 #include "Scanner.h"
-#include <cctype>
 
 namespace Cr
 {
@@ -46,7 +45,7 @@ namespace Cr
 		Parsing_OpSubtract_OR_OpSubtractAssign_OR_OpDec,
 		Parsing_OpMultiply_OR_OpMultiplyAssign,
 		Parsing_OpDivide_OR_OpDivideAssign_OR_SignleLineComment_OR_MultiLineComment,
-		Parsing_SignleLineComment,
+		Parsing_SingleLineComment,
 		Parsing_MultiLineComment,
 		Parsing_OpModulo_OR_OpModuloAssign,
 		Parsing_OpAssignment_OR_OpEquals,
@@ -59,7 +58,7 @@ namespace Cr
 		Parsing_OpOr_OR_OpBitwiseOr_OR_OpBitwiseOrAssign,
 		Parsing_OpBitwiseXor_OR_OpBitwiseXorAssign,
 		Parsing_OpDot_OR_DECIMAL_ConstantFloat_OR_ConstantDouble_FractionPart,
-		Parsing_OpPrepeocessor_OR_OpPreprocessorGlue,
+		Parsing_OpPreprocessor_OR_OpPreprocessorGlue,
 
 	};	// enum class State
 
@@ -71,6 +70,9 @@ namespace Cr
 		m_PrevChar = m_Char;
 		m_Char = m_InputStream->ReadNextChar();
 	}
+
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wconversion"
 
 	/**
 	 * Reads next lexem from the specified stream.
@@ -96,7 +98,7 @@ namespace Cr
 					}
 					if (isspace(m_Char))
 					{
-						// Skipping all unneccesery spaces.
+						// Skipping all unnecessary spaces.
 						ReadNextChar();
 					}
 					else
@@ -139,7 +141,7 @@ namespace Cr
 							case '|': state = ScannerState::Parsing_OpOr_OR_OpBitwiseOr_OR_OpBitwiseOrAssign; break;
 							case '^': state = ScannerState::Parsing_OpBitwiseXor_OR_OpBitwiseXorAssign; break;
 							case '.': state = ScannerState::Parsing_OpDot_OR_DECIMAL_ConstantFloat_OR_ConstantDouble_FractionPart; break;
-							case '#': state = ScannerState::Parsing_OpPrepeocessor_OR_OpPreprocessorGlue; break;
+							case '#': state = ScannerState::Parsing_OpPreprocessor_OR_OpPreprocessorGlue; break;
 
 							// ...or single-character one. 
 							default:
@@ -154,8 +156,8 @@ namespace Cr
 									case '}': return Lexeme(Lexeme::Type::OpScopeEnd);
 									case '[': return Lexeme(Lexeme::Type::OpSubindexBegin);
 									case ']': return Lexeme(Lexeme::Type::OpSubindexEnd);
-									case '(': return Lexeme(Lexeme::Type::OpPenthesesBegin);
-									case ')': return Lexeme(Lexeme::Type::OpPenthesesEnd);
+									case '(': return Lexeme(Lexeme::Type::OpParenthesesBegin);
+									case ')': return Lexeme(Lexeme::Type::OpParenthesesEnd);
 									default:
 										throw ScannerException("Unsupported character in the input stream.");
 								}	// switch (m_PrevChar)
@@ -178,11 +180,11 @@ namespace Cr
 						{
 							return Lexeme(Lexeme::s_KeywordsTable.at(bufferedString));
 						}
-						PIdentifier identifier = nullptr;
+						PIdentifier identifier = new Identifier { bufferedString };
 						if (m_IdentifierTable != nullptr)
 						{
-							identifier = new Identifier();
-							m_IdentifierTable->emplace(bufferedString, identifier);
+						//	identifier = new Identifier();
+							(*m_IdentifierTable)[bufferedString].reset(identifier);
 						}
 						return Lexeme(identifier);
 					}
@@ -333,7 +335,7 @@ namespace Cr
 					if (m_Char == '/')
 					{
 						ReadNextChar();
-						state = ScannerState::Parsing_SignleLineComment;
+						state = ScannerState::Parsing_SingleLineComment;
 						break;
 					}
 					if (m_Char == '*')
@@ -350,7 +352,7 @@ namespace Cr
 						return Lexeme(Lexeme::Type::OpDivideAssign);
 					}
 					return Lexeme(Lexeme::Type::OpDivide);
-				case ScannerState::Parsing_SignleLineComment: 
+				case ScannerState::Parsing_SingleLineComment:
 					if (m_Char == '\n' || m_Char == EOF)
 					{
 						ReadNextChar();
@@ -492,7 +494,7 @@ namespace Cr
 					return Lexeme(Lexeme::Type::OpDot);
 
 				// *************************************************************** //
-				case ScannerState::Parsing_OpPrepeocessor_OR_OpPreprocessorGlue:
+				case ScannerState::Parsing_OpPreprocessor_OR_OpPreprocessorGlue:
 					if (m_Char == '#')
 					{
 						ReadNextChar();
@@ -506,6 +508,8 @@ namespace Cr
 			}	// switch (state)
 		}	// for (state;;)
 	}
+
+#pragma clang diagnostic pop
 
 	// *************************************************************** //
 	// **                 Scanner class unit tests.                 ** //
@@ -548,7 +552,7 @@ namespace Cr
 
 		try
 		{
-			lexeme = scanner.GetNextLexeme();
+			scanner.GetNextLexeme();
 			assert(0);
 		}
 		catch (ScannerException const&)

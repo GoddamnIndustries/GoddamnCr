@@ -8,6 +8,7 @@
 
 #include "Preprocessor.h"
 #include "Scanner.h"
+#include <list>
 
 namespace Cr
 {
@@ -24,14 +25,14 @@ namespace Cr
 		m_Line.resize(0);
 		auto c = m_InputStream->ReadNextChar();
 		for (; c != '\n' && c != EOF; c = m_InputStream->ReadNextChar())
-			m_Line.push_back(c);
+			m_Line.push_back(static_cast<char>(c));
 		return c != EOF;
 	}
 
 	/**
-	 * Reads next lexem from the specified stream.
+	 * Reads next lexeme from the specified stream.
 	 */
-	Lexeme Preprocessor::GetNextLexeme()
+	void Preprocessor::InternallyReadLexemes()
 	{
 		do
 		{
@@ -50,28 +51,65 @@ namespace Cr
 							auto const macroIdentifierLexeme = scanner.GetNextLexeme();
 							if (macroIdentifierLexeme.GetType() != Lexeme::Type::IdIdentifier)
 							{
-								throw PreprocessorException("Identifier expected in macro declaration.");
+								throw PreprocessorException("Identifier expected in the '#define' directive.");
 							}
 
-							/*auto macroFirstContentLexemeOrParams = scanner.GetNextLexeme();
-							if (macroFirstContentLexemeOrParams.GetType() == Lexeme::Type::OpPenthesesBegin)
+							// Found a macro declaration.
+							auto& macro = m_Macros[macroIdentifierLexeme.GetValueID()->m_Value];
+							auto const macroFirstContentLexemeOrParams = scanner.GetNextLexeme();
+							if (macroFirstContentLexemeOrParams.GetType() == Lexeme::Type::OpParenthesesBegin)
 							{
+								// This macro comes with parameters.
+								macro.m_HasAnyParams = true;
 
-							}*/
+								auto const macroFirstParamOrEndParams = scanner.GetNextLexeme();
+								if (macroFirstParamOrEndParams.GetType() != Lexeme::Type::OpParenthesesEnd)
+								{
+									for (auto macroParam = macroFirstParamOrEndParams;; )
+									{
+										if (macroFirstParamOrEndParams.GetType() != Lexeme::Type::IdIdentifier)
+										{
+											throw PreprocessorException("Identifier expected in macro parameter name.");
+										}
 
-							std::vector<Lexeme> macroContent;
+										macro.m_Params.insert(macroParam.GetValueID()->m_Value);
+										auto macroParamCommaOrEnd = scanner.GetNextLexeme();
+										if (macroParamCommaOrEnd.GetType() == Lexeme::Type::OpParenthesesEnd)
+										{
+											break;
+										}
+										else if (macroParamCommaOrEnd.GetType() == Lexeme::Type::OpComma)
+										{
+											macroParam = scanner.GetNextLexeme();
+											continue;
+										}
+										else
+										{
+											throw PreprocessorException("Comma or closing parentheses expected.");
+										}
+									}
+								}
+							}
+
 							for (auto macroContentLexeme = scanner.GetNextLexeme()
 								; macroContentLexeme.GetType() != Lexeme::Type::Null
 								; macroContentLexeme = scanner.GetNextLexeme())
 							{
-								macroContent.push_back(macroContentLexeme);
+								macro.m_Contents.push_back(macroContentLexeme);
 							}
 						}
 						break;
 
 					// *************************************************************** //
 					case Lexeme::Type::KwPpUndef: 
-						assert(0 && "Not implemented.");
+						{
+							auto const macroIdentifierLexeme = scanner.GetNextLexeme();
+							if (macroIdentifierLexeme.GetType() != Lexeme::Type::IdIdentifier)
+							{
+								throw PreprocessorException("Identifier expected in the '#undef' directive.");
+							}
+							m_Macros.erase(macroIdentifierLexeme.GetValueID()->m_Value);
+						}
 						break;
 
 					// *************************************************************** //
@@ -116,8 +154,8 @@ namespace Cr
 
 					// *************************************************************** //
 					case Lexeme::Type::KwPpError: 
-						//! @todo Parse error message in preprocessoser.
-						throw PreprocessorException("[[error message in preprocessoser.]]");
+						//! @todo Parse error message in preprocessor.
+						throw PreprocessorException("[[error message in preprocessor.]]");
 
 					default: 
 						throw PreprocessorException("Unrecognized preprocessor directive.");
@@ -125,9 +163,60 @@ namespace Cr
 			}
 			else
 			{
+				// Reading the whole line to substitute macros in it.
+				std::list<Lexeme> lineContents = { firstLexeme };
+				for (auto lineContentLexeme = scanner.GetNextLexeme()
+						; lineContentLexeme.GetType() != Lexeme::Type::Null
+						; lineContentLexeme = scanner.GetNextLexeme())
+				{
+					lineContents.push_back(lineContentLexeme);
+				}
+
+				// Substituting all existing macros.
+				for (bool allMacroSubstituted = false; !allMacroSubstituted;)
+				{
+					bool anyMacroSubstituted = false;
+					for (auto lineContentsIter = lineContents.begin()
+							; lineContentsIter != lineContents.end(); ++lineContentsIter)
+					{
+						auto const& lineContentsLexeme = *lineContentsIter;
+						if (lineContentsLexeme.GetType() == Lexeme::Type::IdIdentifier
+								&& m_Macros.count(lineContentsLexeme.GetValueID()->m_Value) != 0)
+						{
+							anyMacroSubstituted = true;
+							auto const& macro = m_Macros[lineContentsLexeme.GetValueID()->m_Value];
+							if (macro.m_HasAnyParams)
+							{
+
+							}
+
+							for (auto const& macroContentsLexeme : macro.m_Contents)
+							{
+								lineContents.insert(lineContentsIter, macroContentsLexeme);
+							}
+							lineContents.erase(lineContentsIter);
+							break;
+						}
+					}
+					if (!anyMacroSubstituted)
+					{
+						allMacroSubstituted = true;
+					}
+				}
+
+				int i  =0;
 			}
 
-		} while (ReadNextLine());
+			ReadNextLine();
+		} while (true);
+	}
+	Lexeme Preprocessor::GetNextLexeme()
+	{
+		if (m_CachedLexems.empty())
+		{
+			InternallyReadLexemes();
+		}
+		return m_CachedLexems[0];
 	}
 
 	// *************************************************************** //
@@ -136,7 +225,13 @@ namespace Cr
 
 	CrUnitTest(PreprocessorEmptyStream)
 	{
-		auto inputStream = std::make_shared<IO::StringInputStream>("#define if ");
+		auto inputStream = std::make_shared<IO::StringInputStream>(
+			"#define AAA 3\n "
+			"#define BBB(a, b) a b \n "
+			"BBB((a,c),) += AAA \n"
+			"#undef AAA \n"
+			"AAA ?"
+			);
 		Preprocessor preprocessor(inputStream);
 
 		auto lexeme = preprocessor.GetNextLexeme();

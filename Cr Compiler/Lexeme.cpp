@@ -37,44 +37,4 @@ namespace Cr
 		{ "type_of_my_mom",Type::KwInt }, { "massiv_simvolov",Type::KwString }, { "my_type_too", Type::KwReal },
 	};
 
-	void Lexeme::__DebugPrint() const
-	{
-		//static char const* const lexemTypes[] = {
-		//	"Null",
-		//	"Identifier",
-		//	"CtInteger", "CtString", "CtReal",
-
-		//	// Keywords
-		//	"KwProgram",
-		//	"KwGoto",
-		//	"KwIf",
-		//	"KwFor", "KwWhile", "KwBreak",
-		//	"KwRead", "KwWrite",
-		//	"KwInt", "KwString", "KwReal",
-
-		//	// Operators
-		//	"OpSemicolon", "OpComma",
-		//	"OpScopeBegin", "OpScopeEnd",
-		//	"OpAssignment",
-		//	"OpNot", "OpOr", "OpAnd",
-		//	"OpPlus", "OpMinus", "OpTimes", "OpSlash",
-		//	"OpEquals, OpNotEquals",
-		//	"OpLess", "OpGreater", "OpLessEquals", "OpGreaterEquals",
-		//};
-		//std::cout << lexemTypes[static_cast<size_t>(m_Type)];
-		//switch (m_Type)
-		//{
-		//	case Type::CtInteger: 
-		//		std::cout << ' ' << m_ValueInt;
-		//		break;
-		//	case Type::CtString:
-		//		std::cout << ' ' << m_ValueString.c_str();
-		//		break;
-		//	case Type::CtReal:
-		//		std::cout << ' ' << m_ValueInt;
-		//		break;
-		//	default: break;
-		//}
-		//std::cout << '\n';
-	}
 }	// namespace Cr

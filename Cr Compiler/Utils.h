@@ -16,7 +16,7 @@ namespace Cr
 	struct Exception : public std::exception
 	{
 		explicit Exception(char const* const message)
-			: std::exception(message) {}
+			: std::exception(/*message*/) {}
 	};	// class Exception
 
 #define CrDefineExceptionBase(ClassName, ClassBaseName) \

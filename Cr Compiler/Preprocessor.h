@@ -9,6 +9,7 @@
 #pragma once
 #include "Scanner.h"
 #include <vector>
+#include <set>
 
 namespace Cr
 {
@@ -21,6 +22,9 @@ namespace Cr
 	{
 		struct PreprocessorMacro
 		{
+			bool m_HasAnyParams = false;
+			bool m_HasVaParams = false;
+			std::set<std::string> m_Params;
 			std::vector<Lexeme> m_Contents;
 		};	// struct PreprocessorMacro
 
@@ -28,9 +32,11 @@ namespace Cr
 		IO::PInputStream m_InputStream;
 		std::map<std::string, PreprocessorMacro> m_Macros;
 		std::string m_Line;
+		std::vector<Lexeme> m_CachedLexems;
 
 	private:
 		bool ReadNextLine();
+		void InternallyReadLexemes();
 
 	public:
 
