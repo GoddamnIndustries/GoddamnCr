@@ -1,10 +1,12 @@
-// ==========================================================================================
-// Copyright (C) Goddamn Industries 2016. All Rights Reserved.
-// 
-// This software or any its part is distributed under terms of Goddamn Industries End User
-// License Agreement. By downloading or using this software or any its part you agree with 
-// terms of Goddamn Industries End User License Agreement.
-// ==========================================================================================
+// *************************************************************** //
+// Goddamn "C for Rendering" project.                              //
+// Copyright (C) Goddamn Industries 2016. All Rights Reserved.     //
+//                                                                 //
+// This software or any its part is distributed under terms of     //
+// Goddamn Industries End User License Agreement. By downloading   //
+// or using this software or any its part you agree with           //
+// terms of Goddamn Industries End User License Agreement.         //
+// *************************************************************** //
 
 #include "Scanner.h"
 
@@ -65,19 +67,27 @@ namespace Cr
 	/**
 	 * Reads next character from the specified stream.
 	 */
-	void Scanner::ReadNextChar()
+	CRINL void Scanner::ReadNextChar()
 	{
 		m_PrevChar = m_Char;
 		m_Char = m_InputStream->ReadNextChar();
 	}
 
-#pragma clang diagnostic push
-#pragma clang diagnostic ignored "-Wconversion"
+#if _MSC_VER
+#	pragma warning(push)
+#	pragma warning(disable : 4244) // 'argument' : conversion from 'type1' to 'type2', possible loss of data.
+#endif
+
+#if __clang__
+#	pragma clang diagnostic push
+#	pragma clang diagnostic ignored "-Wconversion"
+#endif
 
 	/**
 	 * Reads next lexem from the specified stream.
+	 * @returns Scanned lexeme or null lexeme on end of stream.
 	 */
-	Lexeme Scanner::GetNextLexeme()
+	CRAPI Lexeme Scanner::GetNextLexeme() throw(ScannerException)
 	{
 		// Resetting state of the scanner.
 		std::string bufferedString;
@@ -244,7 +254,7 @@ namespace Cr
 					}
 					if (isodigit(m_Char))
 					{
-						bufferedInt *= 8;
+						bufferedInt *= 010;
 						bufferedInt += m_Char - '0';
 						ReadNextChar();
 					}
@@ -260,7 +270,7 @@ namespace Cr
 					}
 					if (isxdigit(m_Char))
 					{
-						bufferedInt *= 16;
+						bufferedInt *= 0x10;
 						if (isdigit(m_Char))
 						{
 							bufferedInt += m_Char - '0';
@@ -503,18 +513,25 @@ namespace Cr
 					return Lexeme(Lexeme::Type::OpPreprocessor);
 
 				default:
-					assert(0);
+					CrAssert(0);
 
 			}	// switch (state)
 		}	// for (state;;)
 	}
 
-#pragma clang diagnostic pop
+#if __clang__
+#	pragma clang diagnostic pop
+#endif
+
+#if _MSC_VER
+#	pragma warning(pop)
+#endif
 
 	// *************************************************************** //
 	// **                 Scanner class unit tests.                 ** //
 	// *************************************************************** //
 
+	//! @todo Add more unit tests.
 	CrUnitTest(ScannerEmptyStream)
 	{
 		auto inputStream = std::make_shared<IO::StringInputStream>("   ");
@@ -530,16 +547,16 @@ namespace Cr
 		Scanner scanner(inputStream);
 
 		auto lexeme = scanner.GetNextLexeme();
-		assert(lexeme.GetValueInt() == 1000);
+		CrAssert(lexeme.GetValueInt() == 1000);
 
 		lexeme = scanner.GetNextLexeme();
-		assert(lexeme.GetType() == Lexeme::Type::OpSubtract);
+		CrAssert(lexeme.GetType() == Lexeme::Type::OpSubtract);
 
 		lexeme = scanner.GetNextLexeme();
-		assert(lexeme.GetValueReal() == 1.2003);
+		CrAssert(lexeme.GetValueReal() == 1.2003);
 
 		lexeme = scanner.GetNextLexeme();
-		assert(lexeme.GetType() == Lexeme::Type::Null);
+		CrAssert(lexeme.GetType() == Lexeme::Type::Null);
 	};
 
 	CrUnitTest(ScannerStrings)
@@ -548,7 +565,7 @@ namespace Cr
 		Scanner scanner(inputStream);
 
 		auto lexeme = scanner.GetNextLexeme();
-		assert(lexeme.GetValueString() == "aaa");
+		CrAssert(lexeme.GetValueString() == "aaa");
 
 		try
 		{
@@ -568,13 +585,13 @@ namespace Cr
 		Scanner scanner(inputStream);
 
 		auto lexeme = scanner.GetNextLexeme();
-		assert(lexeme.GetType() == Lexeme::Type::KwIf);
+		CrAssert(lexeme.GetType() == Lexeme::Type::KwIf);
 
 		lexeme = scanner.GetNextLexeme();
-		assert(lexeme.GetType() == Lexeme::Type::IdIdentifier);
+		CrAssert(lexeme.GetType() == Lexeme::Type::IdIdentifier);
 
 		lexeme = scanner.GetNextLexeme();
-		assert(lexeme.GetType() == Lexeme::Type::Null);
+		CrAssert(lexeme.GetType() == Lexeme::Type::Null);
 	};
 
 	CrUnitTest(ScannerCorrectComments)
@@ -583,7 +600,7 @@ namespace Cr
 		Scanner scanner(inputStream);
 
 		auto lexeme = scanner.GetNextLexeme();
-		assert(lexeme.GetType() == Lexeme::Type::Null);
+		CrAssert(lexeme.GetType() == Lexeme::Type::Null);
 	};
 
 	CrUnitTest(ScannerBrokenComments)
@@ -594,7 +611,7 @@ namespace Cr
 		try
 		{
 			scanner.GetNextLexeme();
-			assert(0);
+			CrAssert(0);
 		}
 		catch (ScannerException const&)
 		{ }

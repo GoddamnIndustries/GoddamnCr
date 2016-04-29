@@ -10,12 +10,19 @@
 #include <cassert>
 #include <memory>
 
+#define CRAPI
+#define CRINT
+#define CRINL __forceinline
+#define CrAssert assert
+#define CrLog(l, a, ...) if(l > 0) { fprintf(stderr, a "\n", __VA_ARGS__); }
+#pragma warning(disable : 4290)
+
 namespace Cr
 {
 	// Tiny exception hierarchy.
 	struct Exception : public std::exception
 	{
-		explicit Exception(char const* const message)
+		explicit Exception(char const* const /*message*/)
 			: std::exception(/*message*/) {}
 	};	// class Exception
 
@@ -38,14 +45,15 @@ namespace Cr
 		public:
 			Test(TestFunctor const testFunctor)
 			{
-				try
+				/*try
 				{
 					testFunctor();
 				}
 				catch(...)
 				{
 					assert(0 && "Unhandled exception was caught in tests.");
-				}
+				}*/
+				testFunctor();
 			}
 		};	// class Test
 #define CrUnitTest(TestName) static const ::Cr::Testing::Test __ ## TestName = (::Cr::Testing::TestFunctor)[]()

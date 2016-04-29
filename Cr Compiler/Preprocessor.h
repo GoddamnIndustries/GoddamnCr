@@ -10,6 +10,7 @@
 #include "Scanner.h"
 #include <vector>
 #include <set>
+#include <list>
 
 namespace Cr
 {
@@ -35,15 +36,19 @@ namespace Cr
 		std::vector<Lexeme> m_CachedLexems;
 
 	private:
-		bool ReadNextLine();
+		CRINT bool ReadNextLine();
 		void InternallyReadLexemes();
+
+		CRINT void ParseDirective_DEFINE(Scanner& scanner) throw(PreprocessorException);
+		CRINT void ParseDirective_UNDEF(Scanner& scanner) throw(PreprocessorException);
+		CRINT void SubstituteForLine(std::list<Lexeme>& line);
 
 	public:
 
 		/**
 		 * Initializes a new scanner from the specified stream.
 		 */
-		explicit Preprocessor(IO::PInputStream const& inputStream)
+		CRINL explicit Preprocessor(IO::PInputStream const& inputStream)
 			: m_InputStream(inputStream)
 		{
 			assert(inputStream != nullptr);
@@ -53,7 +58,7 @@ namespace Cr
 		/**
 		 * Reads next lexem from the specified stream.
 		 */
-		Lexeme GetNextLexeme();
+		CRAPI Lexeme GetNextLexeme();
 
 	};	// class Preprocessor
 

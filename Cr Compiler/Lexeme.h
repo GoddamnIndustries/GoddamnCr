@@ -40,7 +40,8 @@ namespace Cr
 
 			// Preprocessor keywords.
 			KwPpDefine, KwPpUndef, KwPpDefined,
-			KwPpIf = (int)KwIf, KwPpIfdef = (int)KwPpDefined + 1, KwPpIfndef, KwPpElse = (int)KwElse, KwPpElif = (int)KwPpIfndef + 1, KwPpEndif,
+			KwPpIf = static_cast<int>(KwIf), KwPpIfdef = static_cast<int>(KwPpDefined) + 1, KwPpIfndef, 
+			KwPpElse = static_cast<int>(KwElse), KwPpElif = static_cast<int>(KwPpIfndef) + 1, KwPpEndif,
 			KwPpPragma, KwPpLine, KwPpError,
 
 			// Operators
@@ -71,7 +72,7 @@ namespace Cr
 		 * Initializes a keyword or operator lexeme.
 		 * @param type The type of lexem.
 		 */
-		explicit Lexeme(Type const type)
+		explicit Lexeme(Type const type = Type::Null)
 			: m_Type(type)
 		{
 			assert(type == Type::Null || type >= Type::KwProgram);
@@ -123,10 +124,10 @@ namespace Cr
 			assert(m_Type == Type::CtReal);
 			return m_ValueReal;
 		}
-		PIdentifier GetValueID() const
+		std::string const& GetValueID() const
 		{
 			assert(m_Type == Type::IdIdentifier);
-			return m_ValueID;
+			return m_ValueID->m_Value;
 		}
 		/// @}
 
