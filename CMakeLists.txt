@@ -7,6 +7,8 @@ set(SOURCE_FILES
     "Cr Compiler/CrCompiler.cpp"
     "Cr Compiler/Lexeme.cpp"
     "Cr Compiler/Lexeme.h"
+    "Cr Compiler/Parser.h"
+    "Cr Compiler/Parser.cpp"
     "Cr Compiler/Preprocessor.cpp"
     "Cr Compiler/Preprocessor.h"
     "Cr Compiler/Scanner.cpp"

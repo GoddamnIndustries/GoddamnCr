@@ -12,9 +12,14 @@
 
 #define CRAPI
 #define CRINT
-#define CRINL __forceinline
+#if _MSC_VER
+#	define CRINL __forceinline
+#else
+#	define __FUNCSIG__ __FUNCTION__
+#	define CRINL
+#endif
 #define CrAssert assert
-#define CrLog(l, a, ...) if(l > 0) { fprintf(stderr, a "\n", __VA_ARGS__); }
+#define CrLog(l, a, ...) if(l > 0) { fprintf(stderr, a, ##__VA_ARGS__); }
 #pragma warning(disable : 4290)
 
 namespace Cr

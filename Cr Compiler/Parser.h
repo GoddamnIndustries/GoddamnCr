@@ -20,29 +20,10 @@ namespace Cr
 {
 	CrDefineExceptionBase(ParserException, WorkflowException);
 
-	
+	class Expression;
 
 	class Parser
 	{
-		enum class ExpressionBaseType
-		{
-			Void,
-			Int = (int)Lexeme::Type::CtInteger,
-			Real = (int)Lexeme::Type::CtReal,
-			String = (int)Lexeme::Type::CtString,
-		};
-
-		struct ExpressionType
-		{
-			ExpressionBaseType m_BaseType;
-			char m_Rows = 1, m_Columns = 1;
-			explicit ExpressionType(ExpressionBaseType m_BaseType) : m_BaseType(m_BaseType) {}
-
-			bool MatchDimensions(ExpressionType const& other) const
-			{
-				return m_Rows == other.m_Rows && m_Columns == other.m_Columns;
-			}
-		};
 
 	public:
 		Scanner* m_Scanner;
@@ -55,25 +36,30 @@ namespace Cr
 		CRINT void ReadNextLexeme();
 		CRAPI void ParseProgram() throw(ParserException);
 		CRAPI void Parse_Statement_OR_Declaration() throw(ParserException);
-	
+
+		template<typename TExpression>
+		CRINL TExpression* CreateExpression(Expression* lhs, Expression* rhs)
+		{
+		}
+
 		CRAPI void Parse_Statement() throw(ParserException);
-		CRAPI void Parse_Statement_Null();
-		CRAPI void Parse_Statement_Definition();
-		CRAPI ExpressionType Parse_Statement_Expression();
-		CRAPI ExpressionType Parse_Statement_Expression_Assignments();
-		CRAPI ExpressionType Parse_Statement_Expression_Ternary();
-		CRAPI ExpressionType Parse_Statement_Expression_Or();
-		CRAPI ExpressionType Parse_Statement_Expression_And();
-		CRAPI ExpressionType Parse_Statement_Expression_BitwiseOr();
-		CRAPI ExpressionType Parse_Statement_Expression_BitwiseXor();
-		CRAPI ExpressionType Parse_Statement_Expression_BitwiseAnd();
-		CRAPI ExpressionType Parse_Statement_Expression_Equals_OR_NotEquals();
-		CRAPI ExpressionType Parse_Statement_Expression_Less_OR_LessEquals_OR_Greater_OR_GreaterEquals();
-		CRAPI ExpressionType Parse_Statement_Expression_BitwiseLeftShift_OR_BitwiseRightShift();
-		CRAPI ExpressionType Parse_Statement_Expression_Add_OR_Subtract();
-		CRAPI ExpressionType Parse_Statement_Expression_Multiply_OR_Divide_OR_Modulo();
-		CRAPI ExpressionType Parse_Statement_Expression_UNARY();
-		CRAPI ExpressionType Parse_Statement_Expression_OPERAND();
+		CRAPI void Parse_Statement_Null() throw(ParserException);
+		CRAPI void Parse_Statement_Definition() throw(ParserException);
+		CRAPI Expression* Parse_Statement_Expression() throw(ParserException);
+		CRAPI Expression* Parse_Statement_Expression_Assignments() throw(ParserException);
+		CRAPI Expression* Parse_Statement_Expression_Ternary() throw(ParserException);
+		CRAPI Expression* Parse_Statement_Expression_Or() throw(ParserException);
+		CRAPI Expression* Parse_Statement_Expression_And() throw(ParserException);
+		CRAPI Expression* Parse_Statement_Expression_BitwiseOr() throw(ParserException);
+		CRAPI Expression* Parse_Statement_Expression_BitwiseXor() throw(ParserException);
+		CRAPI Expression* Parse_Statement_Expression_BitwiseAnd() throw(ParserException);
+		CRAPI Expression* Parse_Statement_Expression_Equals_OR_NotEquals() throw(ParserException);
+		CRAPI Expression* Parse_Statement_Expression_Less_OR_LessEquals_OR_Greater_OR_GreaterEquals() throw(ParserException);
+		CRAPI Expression* Parse_Statement_Expression_BitwiseLeftShift_OR_BitwiseRightShift() throw(ParserException);
+		CRAPI Expression* Parse_Statement_Expression_Add_OR_Subtract() throw(ParserException);
+		CRAPI Expression* Parse_Statement_Expression_Multiply_OR_Divide_OR_Modulo() throw(ParserException);
+		CRAPI Expression* Parse_Statement_Expression_UNARY() throw(ParserException);
+		CRAPI Expression* Parse_Statement_Expression_OPERAND() throw(ParserException);
 		
 		CRAPI void Parse_Expression() throw(ParserException) {}
 		
