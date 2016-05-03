@@ -16,6 +16,7 @@
 
 #include <map>
 #include <deque>
+#include <stack>
 
 namespace Cr
 {
@@ -308,10 +309,6 @@ namespace Cr
 		{
 		};	// class NullStatement
 
-		// --------------------------------------------------------------- //
-		// --                Compound statement parsing.                -- //
-		// --------------------------------------------------------------- //
-
 		// *************************************************************** //
 		class CompoundStatement : public Statement
 		{
@@ -454,48 +451,50 @@ namespace Cr
 		Lexeme m_Lexeme;
 
 		Ast::Function* m_Function;
-		std::deque<Ast::IterationStatement*> m_IterationStatements;
-		std::deque<std::map<std::string, Ast::Identifier*>> m_ScopedIdentifiers;
+		std::stack<Ast::IterationStatement*> m_IterationStatements;
+		std::deque<std::map<std::string, Ast::Identifier*>> m_ScopedIdentifiers;	// have to use deque to iterate through stack.
 
 	private:
 		CRINT void ReadNextLexeme();
 		CRINL void ExpectLexemeAndReadNext(Lexeme::Type const type);
 
-		CRAPI Ast::Expression* Parse_Expression() throw(ParserException);
-		CRAPI Ast::Expression* Parse_Expression_Assignments() throw(ParserException);
-		CRAPI Ast::Expression* Parse_Expression_Ternary() throw(ParserException);
-		CRAPI Ast::Expression* Parse_Expression_Or() throw(ParserException);
-		CRAPI Ast::Expression* Parse_Expression_And() throw(ParserException);
-		CRAPI Ast::Expression* Parse_Expression_BitwiseOr() throw(ParserException);
-		CRAPI Ast::Expression* Parse_Expression_BitwiseXor() throw(ParserException);
-		CRAPI Ast::Expression* Parse_Expression_BitwiseAnd() throw(ParserException);
-		CRAPI Ast::Expression* Parse_Expression_Equals_OR_NotEquals() throw(ParserException);
-		CRAPI Ast::Expression* Parse_Expression_Less_OR_LessEquals_OR_Greater_OR_GreaterEquals() throw(ParserException);
-		CRAPI Ast::Expression* Parse_Expression_BitwiseLeftShift_OR_BitwiseRightShift() throw(ParserException);
-		CRAPI Ast::Expression* Parse_Expression_Add_OR_Subtract() throw(ParserException);
-		CRAPI Ast::Expression* Parse_Expression_Multiply_OR_Divide_OR_Modulo() throw(ParserException);
-		CRAPI Ast::Expression* Parse_Expression_PrefixUnary() throw(ParserException);
-		CRAPI Ast::Expression* Parse_Expression_OPERAND() throw(ParserException);
+		CRINL Ast::Identifier* FindIdentifier(std::string const& name) const;
+
+		CRAPI Ast::Expression* Parse_Expression();
+		CRAPI Ast::Expression* Parse_Expression_Assignments();
+		CRAPI Ast::Expression* Parse_Expression_Ternary();
+		CRAPI Ast::Expression* Parse_Expression_Or();
+		CRAPI Ast::Expression* Parse_Expression_And();
+		CRAPI Ast::Expression* Parse_Expression_BitwiseOr();
+		CRAPI Ast::Expression* Parse_Expression_BitwiseXor();
+		CRAPI Ast::Expression* Parse_Expression_BitwiseAnd();
+		CRAPI Ast::Expression* Parse_Expression_Equals_OR_NotEquals();
+		CRAPI Ast::Expression* Parse_Expression_Less_OR_LessEquals_OR_Greater_OR_GreaterEquals();
+		CRAPI Ast::Expression* Parse_Expression_BitwiseLeftShift_OR_BitwiseRightShift();
+		CRAPI Ast::Expression* Parse_Expression_Add_OR_Subtract();
+		CRAPI Ast::Expression* Parse_Expression_Multiply_OR_Divide_OR_Modulo();
+		CRAPI Ast::Expression* Parse_Expression_PrefixUnary();
+		CRAPI Ast::Expression* Parse_Expression_OPERAND();
 		
-		CRAPI Ast::Statement* Parse_Statement() throw(ParserException);
-		CRAPI Ast::Statement* Parse_Statement_Null() throw(ParserException);
-		CRAPI Ast::Statement* Parse_Statement_Compound() throw(ParserException);
-		CRAPI Ast::Statement* Parse_Statement_Selection_If() throw(ParserException);
-		CRAPI Ast::Statement* Parse_Statement_Iteration_Do() throw(ParserException);
-		CRAPI Ast::Statement* Parse_Statement_Iteration_For() throw(ParserException);
-		CRAPI Ast::Statement* Parse_Statement_Iteration_While() throw(ParserException);
-		CRAPI Ast::Statement* Parse_Statement_Jump_Break() throw(ParserException);
-		CRAPI Ast::Statement* Parse_Statement_Jump_Return() throw(ParserException);
-		CRAPI Ast::Statement* Parse_Statement_Jump_Discard() throw(ParserException);
-		CRAPI Ast::Statement* Parse_Statement_Jump_Continue() throw(ParserException);
-		CRAPI Ast::Statement* Parse_Statement_Declaration_OR_Expression() throw(ParserException);
-		CRAPI Ast::Statement* Parse_Statement_Declaration() throw(ParserException);
-		CRAPI Ast::Statement* Parse_Statement_Declaration_Typedef() throw(ParserException);
-		CRAPI Ast::Statement* Parse_Statement_Declaration_Struct() throw(ParserException);
-		CRAPI Ast::Statement* Parse_Statement_Expression() throw(ParserException);
+		CRAPI Ast::Statement* Parse_Statement();
+		CRAPI Ast::Statement* Parse_Statement_Null();
+		CRAPI Ast::Statement* Parse_Statement_Compound();
+		CRAPI Ast::Statement* Parse_Statement_Selection_If();
+		CRAPI Ast::Statement* Parse_Statement_Iteration_Do();
+		CRAPI Ast::Statement* Parse_Statement_Iteration_For();
+		CRAPI Ast::Statement* Parse_Statement_Iteration_While();
+		CRAPI Ast::Statement* Parse_Statement_Jump_Break();
+		CRAPI Ast::Statement* Parse_Statement_Jump_Return();
+		CRAPI Ast::Statement* Parse_Statement_Jump_Discard();
+		CRAPI Ast::Statement* Parse_Statement_Jump_Continue();
+		CRAPI Ast::Statement* Parse_Statement_Declaration_OR_Expression();
+		CRAPI Ast::Statement* Parse_Statement_Declaration();
+		CRAPI Ast::Statement* Parse_Statement_Declaration_Typedef();
+		CRAPI Ast::Statement* Parse_Statement_Declaration_Struct();
+		CRAPI Ast::Statement* Parse_Statement_Expression();
 
 	public:
-		CRAPI void ParseProgram() throw(ParserException);
+		CRAPI void ParseProgram();
 
 		Parser(Scanner* scanner) : m_Scanner(scanner) {}
 		CRINL Parser(Parser const&) = delete;

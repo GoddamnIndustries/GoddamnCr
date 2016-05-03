@@ -20,6 +20,7 @@
 #endif
 #define CrAssert assert
 #define CrLog(l, a, ...) if(l > 0) { fprintf(stderr, a, ##__VA_ARGS__); }
+#pragma warning(disable : 4127)
 #pragma warning(disable : 4290)
 
 namespace Cr

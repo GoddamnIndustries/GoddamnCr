@@ -112,7 +112,6 @@ namespace Cr
 				}
 
 				SubstituteForLine(lineContents);
-				int i  =0;
 			}
 
 			ReadNextLine();

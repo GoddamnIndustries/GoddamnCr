@@ -13,6 +13,7 @@
 #include "Profile.h"
 #include "Utils.h"
 #include <vector>
+#include <algorithm>
 
 namespace Cr
 {
@@ -31,7 +32,19 @@ namespace Cr
 		ReadNextLexeme();
 	}
 
-	CRAPI void Parser::ParseProgram() throw(ParserException)
+	CRINL Ast::Identifier* Parser::FindIdentifier(std::string const& name) const
+	{
+		for (auto iter = m_ScopedIdentifiers.crbegin(); iter != m_ScopedIdentifiers.crend(); ++iter)
+		{
+			if (iter->count(name) != 0)
+			{
+				return iter->at(name);
+			}
+		}
+		return nullptr;
+	}
+
+	CRAPI void Parser::ParseProgram()
 	{
 		m_Profile = new Profile();
 		CrLog(0, __FUNCSIG__);
@@ -73,12 +86,11 @@ namespace Cr
 	 * Parses all kinds of expressions.
 	 * { Internally parses: <expression> [, <expression>] }
 	 */
-	CRAPI Ast::Expression* Parser::Parse_Expression() throw(ParserException)
+	CRAPI Ast::Expression* Parser::Parse_Expression()
 	{
 		auto expression = Parse_Expression_Assignments();
 		while (m_Lexeme == Lexeme::Type::OpComma)
 		{
-			CrLog(1, ",");
 			ReadNextLexeme();
 			expression = m_Profile->CreateCommaExpression(expression, Parse_Expression_Assignments());
 		}
@@ -89,7 +101,7 @@ namespace Cr
 	 * Parses all kinds of assignment expressions.
 	 * { Internally parses: <expression> [ @= <expression> ] }
 	 */
-	CRAPI Ast::Expression* Parser::Parse_Expression_Assignments() throw(ParserException)
+	CRAPI Ast::Expression* Parser::Parse_Expression_Assignments()
 	{
 		auto expression = Parse_Expression_Ternary();
 		while (true)
@@ -97,19 +109,16 @@ namespace Cr
 			switch (m_Lexeme.GetType())
 			{
 				case Lexeme::Type::OpAssignment:
-					CrLog(2, "=");
 					expression = m_Profile->CreateAssignmentBinaryExpression(expression, Parse_Expression_Ternary());
 					break;
 
 				case Lexeme::Type::OpAddAssign: case Lexeme::Type::OpSubtractAssign:
 				case Lexeme::Type::OpMultiplyAssign: case Lexeme::Type::OpDivideAssign: case Lexeme::Type::OpModuloAssign:
-					CrLog(2, "+=_-=_*=_/=_%%=");
 					expression = m_Profile->CreateArithmeticAssignmentBinaryExpression(m_Lexeme.GetType(), expression, Parse_Expression_Ternary());
 					break;
 
 				case Lexeme::Type::OpBitwiseAndAssign: case Lexeme::Type::OpBitwiseOrAssign: case Lexeme::Type::OpBitwiseXorAssign:
 				case Lexeme::Type::OpBitwiseLeftShiftAssign: case Lexeme::Type::OpBitwiseRightShiftAssign:
-					CrLog(2, "&=_|=_^=_<<=_>>=");
 					expression = m_Profile->CreateBitwiseAssignmentBinaryExpression(m_Lexeme.GetType(), expression, Parse_Expression_Ternary());
 					break;
 
@@ -128,20 +137,21 @@ namespace Cr
 	 * { Internally parses: <expression> [ ? <expression> : <expression> ] }
 	 */
 	// *************************************************************** //
-	CRAPI Ast::Expression* Parser::Parse_Expression_Ternary() throw(ParserException)
+	CRAPI Ast::Expression* Parser::Parse_Expression_Ternary()
 	{
 		auto expression = Parse_Expression_Or();
 		while (m_Lexeme == Lexeme::Type::OpTernary)
 		{
-			CrLog(3, "?:");
+			// <expression> ? <expression> : <expression>
+			// ---------------~~~~~~~~~~~~---------------
 			auto const trueBranchExpression = Parse_Expression();
-			if (m_Lexeme.GetType() != Lexeme::Type::OpColon)
-			{
-				throw ParserException("':' expected in ternary operator.");
-			}
 
-			ReadNextLexeme();
+			ExpectLexemeAndReadNext(Lexeme::Type::OpColon);
+
+			// <expression> ? <expression> : <expression>
+			// ------------------------------~~~~~~~~~~~~
 			auto const falseBranchExpression = Parse_Expression();
+
 			expression = m_Profile->CreateTernaryExpression(expression, trueBranchExpression, falseBranchExpression);
 		}
 		return expression;
@@ -156,121 +166,111 @@ namespace Cr
 	 * { Internally parses: <expression> [ @ <expression>] }
 	 */
 	// *************************************************************** //
-	CRAPI Ast::Expression* Parser::Parse_Expression_Or() throw(ParserException)
+	CRAPI Ast::Expression* Parser::Parse_Expression_Or()
 	{
 		auto expression = Parse_Expression_And();
 		while (m_Lexeme == Lexeme::Type::OpOr)
 		{
-			CrLog(4, "||");
 			ReadNextLexeme();
 			expression = m_Profile->CreateLogicBinaryExpression(m_Lexeme.GetType(), expression, Parse_Expression_And());
 		}
 		return expression;
 	}
 	// *************************************************************** //
-	CRAPI Ast::Expression* Parser::Parse_Expression_And() throw(ParserException)
+	CRAPI Ast::Expression* Parser::Parse_Expression_And()
 	{
 		auto expression = Parse_Expression_BitwiseOr();
 		while (m_Lexeme == Lexeme::Type::OpAnd)
 		{
-			CrLog(5, "&&");
 			ReadNextLexeme();
 			expression = m_Profile->CreateLogicBinaryExpression(m_Lexeme.GetType(), expression, Parse_Expression_BitwiseOr());
 		}
 		return expression;
 	}
 	// *************************************************************** //
-	CRAPI Ast::Expression* Parser::Parse_Expression_BitwiseOr() throw(ParserException)
+	CRAPI Ast::Expression* Parser::Parse_Expression_BitwiseOr()
 	{
 		auto expression = Parse_Expression_BitwiseXor();
 		while (m_Lexeme == Lexeme::Type::OpBitwiseOr)
 		{
-			CrLog(6, "|");
 			ReadNextLexeme();
 			expression = m_Profile->CreateBitwiseBinaryExpression(m_Lexeme.GetType(), expression, Parse_Expression_BitwiseXor());
 		}
 		return expression;
 	}
 	// *************************************************************** //
-	CRAPI Ast::Expression* Parser::Parse_Expression_BitwiseXor() throw(ParserException)
+	CRAPI Ast::Expression* Parser::Parse_Expression_BitwiseXor()
 	{
 		auto expression = Parse_Expression_BitwiseAnd();
 		while (m_Lexeme == Lexeme::Type::OpBitwiseXor)
 		{
-			CrLog(7, "^");
 			ReadNextLexeme();
 			expression = m_Profile->CreateBitwiseBinaryExpression(m_Lexeme.GetType(), expression, Parse_Expression_BitwiseAnd());
 		}
 		return expression;
 	}
 	// *************************************************************** //
-	CRAPI Ast::Expression* Parser::Parse_Expression_BitwiseAnd() throw(ParserException)
+	CRAPI Ast::Expression* Parser::Parse_Expression_BitwiseAnd()
 	{
 		auto expression = Parse_Expression_Equals_OR_NotEquals();
 		while (m_Lexeme == Lexeme::Type::OpBitwiseAnd)
 		{
-			CrLog(8, "&");
 			ReadNextLexeme();
 			expression = m_Profile->CreateBitwiseBinaryExpression(m_Lexeme.GetType(), expression, Parse_Expression_Equals_OR_NotEquals());
 		}
 		return expression;
 	}
 	// *************************************************************** //
-	CRAPI Ast::Expression* Parser::Parse_Expression_Equals_OR_NotEquals() throw(ParserException)
+	CRAPI Ast::Expression* Parser::Parse_Expression_Equals_OR_NotEquals()
 	{
 		auto expression = Parse_Expression_Less_OR_LessEquals_OR_Greater_OR_GreaterEquals();
 		while (m_Lexeme == Lexeme::Type::OpEquals || m_Lexeme == Lexeme::Type::OpNotEquals)
 		{
-			CrLog(9, "&&_||");
 			ReadNextLexeme();
 			expression = m_Profile->CreateLogicBinaryExpression(m_Lexeme.GetType(), expression, Parse_Expression_Less_OR_LessEquals_OR_Greater_OR_GreaterEquals());
 		}
 		return expression;
 	}
 	// *************************************************************** //
-	CRAPI Ast::Expression* Parser::Parse_Expression_Less_OR_LessEquals_OR_Greater_OR_GreaterEquals() throw(ParserException)
+	CRAPI Ast::Expression* Parser::Parse_Expression_Less_OR_LessEquals_OR_Greater_OR_GreaterEquals()
 	{
 		auto expression = Parse_Expression_BitwiseLeftShift_OR_BitwiseRightShift();
 		while (m_Lexeme == Lexeme::Type::OpLess || m_Lexeme == Lexeme::Type::OpLessEquals
 			|| m_Lexeme == Lexeme::Type::OpGreater || m_Lexeme == Lexeme::Type::OpGreaterEquals)
 		{
-			CrLog(10, "<_<=_>_>=");
 			ReadNextLexeme();
 			expression = m_Profile->CreateLogicBinaryExpression(m_Lexeme.GetType(), expression, Parse_Expression_BitwiseLeftShift_OR_BitwiseRightShift());
 		}
 		return expression;
 	}
 	// *************************************************************** //
-	CRAPI Ast::Expression* Parser::Parse_Expression_BitwiseLeftShift_OR_BitwiseRightShift() throw(ParserException)
+	CRAPI Ast::Expression* Parser::Parse_Expression_BitwiseLeftShift_OR_BitwiseRightShift()
 	{
 		auto expression = Parse_Expression_Add_OR_Subtract();
 		while (m_Lexeme == Lexeme::Type::OpBitwiseLeftShift || m_Lexeme == Lexeme::Type::OpBitwiseRightShift)
 		{
-			CrLog(11, "<<_>>");
 			ReadNextLexeme();
 			expression = m_Profile->CreateBitwiseBinaryExpression(m_Lexeme.GetType(), expression, Parse_Expression_Add_OR_Subtract());
 		}
 		return expression;
 	}
 	// *************************************************************** //
-	CRAPI Ast::Expression* Parser::Parse_Expression_Add_OR_Subtract() throw(ParserException)
+	CRAPI Ast::Expression* Parser::Parse_Expression_Add_OR_Subtract()
 	{
 		auto expression = Parse_Expression_Multiply_OR_Divide_OR_Modulo();
 		while (m_Lexeme == Lexeme::Type::OpAdd || m_Lexeme == Lexeme::Type::OpSubtract)
 		{
-			CrLog(12, "+_-");
 			ReadNextLexeme();
 			expression = m_Profile->CreateArithmeticBinaryExpression(m_Lexeme.GetType(), expression, Parse_Expression_Multiply_OR_Divide_OR_Modulo());
 		}
 		return expression;
 	}
 	// *************************************************************** //
-	CRAPI Ast::Expression* Parser::Parse_Expression_Multiply_OR_Divide_OR_Modulo() throw(ParserException)
+	CRAPI Ast::Expression* Parser::Parse_Expression_Multiply_OR_Divide_OR_Modulo()
 	{
 		auto expression = Parse_Expression_PrefixUnary();
 		while (m_Lexeme == Lexeme::Type::OpMultiply || m_Lexeme == Lexeme::Type::OpDivide || m_Lexeme == Lexeme::Type::OpModulo)
 		{
-			CrLog(13, "*_/_%%");
 			ReadNextLexeme();
 			expression = m_Profile->CreateArithmeticBinaryExpression(m_Lexeme.GetType(), expression, Parse_Expression_PrefixUnary());
 		}
@@ -286,7 +286,7 @@ namespace Cr
 	 * { Internally parses: [@]<expression> }
 	 */
 	// *************************************************************** //
-	CRAPI Ast::Expression* Parser::Parse_Expression_PrefixUnary() throw(ParserException)
+	CRAPI Ast::Expression* Parser::Parse_Expression_PrefixUnary()
 	{
 		//! @todo Add cast expressions.
 		//! @todo Add 'sizeof' expressions.
@@ -294,24 +294,20 @@ namespace Cr
 		{
 			case Lexeme::Type::OpAdd:
 			case Lexeme::Type::OpSubtract:
-				CrLog(14, "+_-");
 				ReadNextLexeme();
 				return m_Profile->CreateArithmeticUnaryExpression(m_Lexeme.GetType(), Parse_Expression_OPERAND());
 
 			case Lexeme::Type::OpInc:
 			case Lexeme::Type::OpDec:
-				CrLog(14, "++_--");
 				CrAssert(0);
 				ReadNextLexeme();
 				return m_Profile->CreateArithmeticUnaryExpression(m_Lexeme.GetType(), Parse_Expression_OPERAND());
 
 			case Lexeme::Type::OpNot:
-				CrLog(14, "!");
 				ReadNextLexeme();
 				return m_Profile->CreateLogicUnaryExpression(m_Lexeme.GetType(), Parse_Expression_OPERAND());
 
 			case Lexeme::Type::OpBitwiseNot:
-				CrLog(14, "~");
 				ReadNextLexeme();
 				return m_Profile->CreateBitwiseUnaryExpression(m_Lexeme.GetType(), Parse_Expression_OPERAND());
 
@@ -320,7 +316,7 @@ namespace Cr
 		}
 	}
 	// *************************************************************** //
-	CRAPI Ast::Expression* Parser::Parse_Expression_OPERAND() throw(ParserException)
+	CRAPI Ast::Expression* Parser::Parse_Expression_OPERAND()
 	{
 		switch (m_Lexeme.GetType())
 		{
@@ -357,7 +353,7 @@ namespace Cr
 	 * Parses all kinds of statements.
 	 */
 	// *************************************************************** //
-	CRAPI Ast::Statement* Parser::Parse_Statement() throw(ParserException)
+	CRAPI Ast::Statement* Parser::Parse_Statement()
 	{
 		switch (m_Lexeme.GetType())
 		{
@@ -407,38 +403,28 @@ namespace Cr
 
 			// Declaration or Expression statement.
 			// *************************************************************** //
-			case Lexeme::Type::KwTypedef:
-				ReadNextLexeme();
-				return Parse_Statement_Declaration_Typedef();
-			case Lexeme::Type::KwStruct:
-				ReadNextLexeme();
-				return Parse_Statement_Declaration_Struct();
 			default:
 				return Parse_Statement_Declaration_OR_Expression();
 		}
 	}
 
 	/**
-	 * Parses null statements.
-	 * { Examples: ; }
+	 * Parses NULL statements.
+	 * { NULL ::= ; }
 	 */
 	// *************************************************************** //
-	CRAPI Ast::Statement* Parser::Parse_Statement_Null() throw(ParserException)
+	CRAPI Ast::Statement* Parser::Parse_Statement_Null()
 	{
 		ReadNextLexeme();
 		return m_Profile->CreateNullStatement();
 	}
 
-	// --------------------------------------------------------------- //
-	// --                Compound statement parsing.                -- //
-	// --------------------------------------------------------------- //
-
 	/**
-	 * Parses compound statements.
-	 * { Examples: { [statement] [statement] ... } }
+	 * Parses COUMPOUND statements.
+	 * { COUMPOUND ::= { [statement] [statement] ... } }
 	 */
 	// *************************************************************** //
-	CRAPI Ast::Statement* Parser::Parse_Statement_Compound() throw(ParserException)
+	CRAPI Ast::Statement* Parser::Parse_Statement_Compound()
 	{
 		m_ScopedIdentifiers.emplace_back();
 		CrAssert(0);
@@ -459,26 +445,26 @@ namespace Cr
 	// --------------------------------------------------------------- //
 
 	/**
-	 * Parses compound statements.
-	 * { Examples: if (<expression>) <statement> [else <statement>] }
+	 * Parses IF-ELSE compound statement.
+	 * { IF-ELSE ::= if (<expression>) <statement> [else <statement>] }
 	 */
 	// *************************************************************** //
-	CRAPI Ast::Statement* Parser::Parse_Statement_Selection_If() throw(ParserException)
+	CRAPI Ast::Statement* Parser::Parse_Statement_Selection_If()
 	{
 		ExpectLexemeAndReadNext(Lexeme::Type::OpParenthesesBegin);
 
-		// { if (<expression>) <statement> [else <statement>] }
-		//   ----~~~~~~~~~~~~--------------------------------
+		// if (<expression>) <statement> [else <statement>]
+		// ----~~~~~~~~~~~~--------------------------------
 		auto const conditionExpr = Parse_Expression();
 
 		ExpectLexemeAndReadNext(Lexeme::Type::OpParenthesesEnd);
 
-		// { if (<expression>) <statement> [else <statement>] }
-		//   ------------------~~~~~~~~~~~-------------------
+		// if (<expression>) <statement> [else <statement>]
+		// ------------------~~~~~~~~~~~-------------------
 		auto const trueBranchStatement = Parse_Statement();
 
-		// { if (<expression>) <statement> else [<statement>] }
-		//   -----------------------------------~~~~~~~~~~~~~
+		// if (<expression>) <statement> [else <statement>]
+		// ------------------------------------~~~~~~~~~~~-
 		Ast::Statement* falseBranchStatement = nullptr;
 		if (m_Lexeme == Lexeme::Type::KwElse)
 		{
@@ -493,16 +479,14 @@ namespace Cr
 	// --------------------------------------------------------------- //
 
 	/**
-	 * Parses iteration statements.
-	 * / Examples: do <statement> while (<expression>);                         \
-	 * |           for (<statement> [<expression>]; [<expression>]) <statement> |
-	 * \           while (<expression>) <statement>                             /
+	 * Parses WHILE iteration statement.
+	 * { WHILE ::= while (<expression>) <statement> }
 	 */
 	// *************************************************************** //
-	CRAPI Ast::Statement* Parser::Parse_Statement_Iteration_While() throw(ParserException)
+	CRAPI Ast::Statement* Parser::Parse_Statement_Iteration_While()
 	{
 		auto const whileIterationStatement = m_Profile->CreateWhileIterationStatement();
-		m_IterationStatements.push_back(whileIterationStatement);
+		m_IterationStatements.push(whileIterationStatement);
 
 		ExpectLexemeAndReadNext(Lexeme::Type::OpParenthesesBegin);
 		
@@ -516,15 +500,20 @@ namespace Cr
 		// ---------------------~~~~~~~~~~~
 		auto const loopStatement = Parse_Statement();
 
-		m_IterationStatements.pop_back();
+		m_IterationStatements.pop();
 		whileIterationStatement->Initialize(conditionExpr, loopStatement);
 		return whileIterationStatement;
 	}
+
+	/**
+	 * Parses DO-WHILE iteration statement.
+	 * { DO-WHILE ::= do <statement> while (<expression>); }
+	 */
 	// *************************************************************** //
-	CRAPI Ast::Statement* Parser::Parse_Statement_Iteration_Do() throw(ParserException)
+	CRAPI Ast::Statement* Parser::Parse_Statement_Iteration_Do()
 	{
 		auto const doWhileIterationStatement = m_Profile->CreateDoIterationStatement();
-		m_IterationStatements.push_back(doWhileIterationStatement);
+		m_IterationStatements.push(doWhileIterationStatement);
 
 		// do <statement> while (<expression>);
 		// ---~~~~~~~~~~~----------------------
@@ -540,15 +529,20 @@ namespace Cr
 		ExpectLexemeAndReadNext(Lexeme::Type::OpParenthesesEnd);
 		ExpectLexemeAndReadNext(Lexeme::Type::OpSemicolon);
 		
-		m_IterationStatements.pop_back();
+		m_IterationStatements.pop();
 		doWhileIterationStatement->Initialize(loopStatement, conditionExpr);
 		return doWhileIterationStatement;
 	}
+
+	/**
+	 * Parses FOR iteration statement.
+	 * { FOR ::= for (<statement> [<expression>]; [<expression>]) <statement> }
+	 */
 	// *************************************************************** //
-	CRAPI Ast::Statement* Parser::Parse_Statement_Iteration_For() throw(ParserException)
+	CRAPI Ast::Statement* Parser::Parse_Statement_Iteration_For()
 	{
 		auto const forIterationStatement = m_Profile->CreateForIterationStatement();
-		m_IterationStatements.push_back(forIterationStatement);
+		m_IterationStatements.push(forIterationStatement);
 		m_ScopedIdentifiers.emplace_back();
 
 		ExpectLexemeAndReadNext(Lexeme::Type::OpParenthesesBegin);
@@ -594,7 +588,7 @@ namespace Cr
 		auto const loopStatement = Parse_Statement();
 		
 		m_ScopedIdentifiers.pop_back();
-		m_IterationStatements.pop_back();
+		m_IterationStatements.pop();
 		forIterationStatement->Initialize(initStatement, conditionExpr, iterationExpr, loopStatement);
 		return forIterationStatement;
 	}
@@ -604,34 +598,41 @@ namespace Cr
 	// --------------------------------------------------------------- //
 
 	/**
-	 * Parses jump statements.
-	 * / Examples: break;                 \
-	 * |           discard;               |
-	 * |           continue;              |
-	 * \           return [<expression>]; /
+	 * Parses BREAK jump statements.
+	 * { BREAK ::= break; }
 	 */
 	// *************************************************************** //
-	CRAPI Ast::Statement* Parser::Parse_Statement_Jump_Break() throw(ParserException)
+	CRAPI Ast::Statement* Parser::Parse_Statement_Jump_Break()
 	{
 		if (m_IterationStatements.empty())
 		{
 			throw ParserException("'break' statement outside of any loop.");
 		}
 		ExpectLexemeAndReadNext(Lexeme::Type::OpSemicolon);
-		return m_Profile->CreateBreakJumpStatement(m_IterationStatements.back());
+		return m_Profile->CreateBreakJumpStatement(m_IterationStatements.top());
 	}
+
+	/**
+	 * Parses CONTINUE jump statements.
+	 * { CONTINUE ::= continue; }
+	 */
 	// *************************************************************** //
-	CRAPI Ast::Statement* Parser::Parse_Statement_Jump_Continue() throw(ParserException)
+	CRAPI Ast::Statement* Parser::Parse_Statement_Jump_Continue()
 	{
 		if (m_IterationStatements.empty())
 		{
 			throw ParserException("'continue' statement outside of any loop.");
 		}
 		ExpectLexemeAndReadNext(Lexeme::Type::OpSemicolon);
-		return m_Profile->CreateContinueJumpStatement(m_IterationStatements.back());
+		return m_Profile->CreateContinueJumpStatement(m_IterationStatements.top());
 	}
+
+	/**
+	 * Parses RETURN jump statements.
+	 * { RETURN ::= return [<expression>]; }
+	 */
 	// *************************************************************** //
-	CRAPI Ast::Statement* Parser::Parse_Statement_Jump_Return() throw(ParserException)
+	CRAPI Ast::Statement* Parser::Parse_Statement_Jump_Return()
 	{
 		// return [<expression>]; 
 		// -------~~~~~~~~~~~~~~-
@@ -647,8 +648,13 @@ namespace Cr
 		}
 		return m_Profile->CreateReturnJumpStatement(m_Function, expression);
 	}
+
+	/**
+	 * Parses DISCARD jump statements.
+	 * { DISCARD ::= discard; }
+	 */
 	// *************************************************************** //
-	CRAPI Ast::Statement* Parser::Parse_Statement_Jump_Discard() throw(ParserException)
+	CRAPI Ast::Statement* Parser::Parse_Statement_Jump_Discard()
 	{
 		ExpectLexemeAndReadNext(Lexeme::Type::OpSemicolon);
 		return m_Profile->CreateDiscardJumpStatement();
@@ -659,33 +665,33 @@ namespace Cr
 	// --------------------------------------------------------------- //
 
 	// *************************************************************** //
-	CRAPI Ast::Statement* Parser::Parse_Statement_Declaration_OR_Expression() throw(ParserException)
+	CRAPI Ast::Statement* Parser::Parse_Statement_Declaration_OR_Expression()
 	{
 		CrAssert(0);
 		return nullptr;
 	}
 	
 	// *************************************************************** //
-	CRAPI Ast::Statement* Parser::Parse_Statement_Declaration() throw(ParserException)
+	CRAPI Ast::Statement* Parser::Parse_Statement_Declaration()
 	{
 		CrAssert(0);
 		return nullptr;
 	}
 	// *************************************************************** //
-	CRAPI Ast::Statement* Parser::Parse_Statement_Declaration_Typedef() throw(ParserException)
+	CRAPI Ast::Statement* Parser::Parse_Statement_Declaration_Typedef()
 	{
 		CrAssert(0);
 		return nullptr;
 	}
 	// *************************************************************** //
-	CRAPI Ast::Statement* Parser::Parse_Statement_Declaration_Struct() throw(ParserException)
+	CRAPI Ast::Statement* Parser::Parse_Statement_Declaration_Struct()
 	{
 		CrAssert(0);
 		return nullptr;
 	}
 
 	// *************************************************************** //
-	CRAPI Ast::Statement* Parser::Parse_Statement_Expression() throw(ParserException)
+	CRAPI Ast::Statement* Parser::Parse_Statement_Expression()
 	{
 		CrAssert(0);
 		return nullptr;
@@ -695,7 +701,7 @@ namespace Cr
 	// *************************************************************** //
 
 #if 0
-	CRAPI Ast::Statement* Parser::Parse_Statement_Definition() throw(ParserException)
+	CRAPI Ast::Statement* Parser::Parse_Statement_Definition()
 	{
 		CrLog(0, __FUNCSIG__);
 		if (m_Lexeme.GetType() != Lexeme::Type::IdIdentifier)
