@@ -26,16 +26,83 @@ namespace Cr
 	public:
 		enum class Type
 		{
-			Null = 0, 
+			Null = 0,
 			IdIdentifier,
 			CtInteger, CtString, CtReal,
 
 			// Keywords.
+			/*
+			bool
+			break
+			char
+			column_major
+			compile
+			const
+			continue
+			discard
+			do
+			double
+			dword*
+			else
+			emit
+			extern
+			false
+			fixed
+			float*
+			for
+			get
+			half
+			if
+			in
+			inline
+			inout
+			int
+			long
+			matrix*
+			out
+			packed
+			pass*
+			pixelfragment*
+			pixelshader*
+			return
+			row_major
+			sampler
+			sampler_state
+			sampler1D
+			sampler2D
+			sampler3D
+			samplerCUBE
+			shared
+			short
+			sizeof
+			static
+			static_cast
+			struct
+			technique*
+			template
+			texture*
+			texture1D
+			texture2D
+			texture3D
+			textureCUBE
+			textureRECT
+			true
+			typedef
+			uniform
+			unsigned
+			vector*
+			vertexfragment*
+			vertexshader*
+			void
+			volatile
+			while
+			*/
 			KwProgram,
-			KwGoto,
-			KwIf, KwElse,
-			KwFor, KwWhile, KwBreak, KwContinue,
+			KwDiscard,
+			KwIf, KwElse, KwSwitch,
+			KwDo, KwFor, KwWhile, KwBreak, KwContinue, KwReturn,
 			KwRead, KwWrite,
+			KwTypedef, KwStruct,
 			KwInt, KwString, KwReal,
 
 			// Preprocessor keywords.
@@ -103,6 +170,15 @@ namespace Cr
 		Type GetType() const
 		{
 			return m_Type;
+		}
+
+		bool operator== (Type const type) const
+		{
+			return m_Type == type;
+		}
+		bool operator!= (Type const type) const
+		{
+			return m_Type != type;
 		}
 
 		/**

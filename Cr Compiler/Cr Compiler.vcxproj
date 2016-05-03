@@ -114,12 +114,14 @@
     <ClCompile Include="Parser.cpp" />
     <ClCompile Include="Preprocessor.cpp" />
     <ClCompile Include="CrCompiler.cpp" />
+    <ClCompile Include="Profile.cpp" />
     <ClCompile Include="Scanner.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Lexeme.h" />
     <ClInclude Include="Parser.h" />
     <ClInclude Include="Preprocessor.h" />
+    <ClInclude Include="Profile.h" />
     <ClInclude Include="Scanner.h" />
     <ClInclude Include="Utils.h" />
   </ItemGroup>

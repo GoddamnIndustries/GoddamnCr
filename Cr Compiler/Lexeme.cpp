@@ -15,7 +15,6 @@ namespace Cr
 		
 		// Keywords
 		{ "program", Type::KwProgram },
-		{ "goto",    Type::KwGoto    },
 		{ "if",      Type::KwIf      }, { "else",   Type::KwElse   },
 		{ "for",     Type::KwFor     }, { "while",  Type::KwWhile  }, { "break", Type::KwBreak }, { "continue", Type::KwContinue },
 		{ "read",    Type::KwRead    }, { "write",  Type::KwWrite  }, 
@@ -28,7 +27,6 @@ namespace Cr
 
 		//! @todo Remove this trash.
 		{ "paktor",  Type::KwProgram }, 
-		{ "poidemte",Type::KwGoto    },
 		{ "esli",    Type::KwIf      }, { "inache", Type::KwElse   },
 		{ "kek",     Type::KwFor     }, { "while",  Type::KwWhile  }, { "makarov", Type::KwBreak }, { "prodolzhai", Type::KwContinue },
 		{ "vvod",    Type::KwRead    }, { "vivod",  Type::KwWrite  }, 
