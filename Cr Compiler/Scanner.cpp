@@ -1,12 +1,15 @@
-// *************************************************************** //
-// Goddamn "C for Rendering" project.                              //
-// Copyright (C) Goddamn Industries 2016. All Rights Reserved.     //
-//                                                                 //
-// This software or any its part is distributed under terms of     //
-// Goddamn Industries End User License Agreement. By downloading   //
-// or using this software or any its part you agree with           //
-// terms of Goddamn Industries End User License Agreement.         //
-// *************************************************************** //
+// $$***************************************************************$$ //
+//                                                                     //
+//                  Goddamn "C for Rendering" project                  //
+//     Copyright (C) Goddamn Industries 2016. All Rights Reserved.     //
+//          ( https://github.com/GoddamnIndustries/GoddamnCr )         //
+//                                                                     //
+//    This software or any its part is distributed under the terms of  //
+//   Goddamn Industries End User License Agreement. By downloading or  //
+//   using this software or any its part you agree with the terms of   //
+//   Goddamn Industries End User License Agreement.                    //
+//                                                                     //
+// $$***************************************************************$$ //
 
 #include "Scanner.h"
 
@@ -87,7 +90,7 @@ namespace Cr
 	 * Reads next lexem from the specified stream.
 	 * @returns Scanned lexeme or null lexeme on end of stream.
 	 */
-	CRAPI Lexeme Scanner::GetNextLexeme() throw(ScannerException)
+	CR_API Lexeme Scanner::GetNextLexeme() throw(ScannerException)
 	{
 		// Resetting state of the scanner.
 		std::string bufferedString;
@@ -200,6 +203,7 @@ namespace Cr
 					}
 					break;
 
+				//! @todo Implement postfix parsing.
 				// *************************************************************** //
 				case ScannerState::Parsing_DECIMAL_ConstantInteger_OR_ConstantFloat_OR_ConstantDouble:
 					if (m_Char == '\'')
@@ -225,6 +229,7 @@ namespace Cr
 					break;
 				case ScannerState::Parsing_DECIMAL_ConstantFloat_OR_ConstantDouble_FractionPart:
 				//	assert(0 && "Not implemented.");
+					//! @todo Implement 'e' notation for exponent part.
 					if (isdigit(m_Char))
 					{
 						bufferedRealExponent /= 10.0f;
@@ -287,22 +292,6 @@ namespace Cr
 					}
 					break;
 				
-				//! @todo Do we actually need string constants?
-				// *************************************************************** //
-				case ScannerState::Parsing_ConstantString:
-					if (m_Char == EOF)
-					{
-						throw ScannerException("Unexpected end of stream while scanning string constant.");
-					}
-					if (m_Char != '"')
-					{
-						bufferedString.push_back(m_Char);
-						ReadNextChar();
-						break;
-					}
-					ReadNextChar();
-					return Lexeme(bufferedString);
-
 				// *************************************************************** //
 				case ScannerState::Parsing_OpAdd_OR_OpAddAssign_OR_OpInc:
 					if (m_Char == '+')
@@ -553,30 +542,10 @@ namespace Cr
 		CrAssert(lexeme.GetType() == Lexeme::Type::OpSubtract);
 
 		lexeme = scanner.GetNextLexeme();
-		CrAssert(lexeme.GetValueReal() == 1.2003);
+		CrAssert(lexeme.GetValueDouble() == 1.2003);
 
 		lexeme = scanner.GetNextLexeme();
 		CrAssert(lexeme.GetType() == Lexeme::Type::Null);
-	};
-
-	CrUnitTest(ScannerStrings)
-	{
-		auto inputStream = std::make_shared<IO::StringInputStream>("\"aaa\" \"bbb");
-		Scanner scanner(inputStream);
-
-		auto lexeme = scanner.GetNextLexeme();
-		CrAssert(lexeme.GetValueString() == "aaa");
-
-		try
-		{
-			scanner.GetNextLexeme();
-			assert(0);
-		}
-		catch (ScannerException const&)
-		{ }
-
-		lexeme = scanner.GetNextLexeme();
-		assert(lexeme.GetType() == Lexeme::Type::Null);
 	};
 
 	CrUnitTest(ScannerKeywordsAndIDs)

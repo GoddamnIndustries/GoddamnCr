@@ -1,12 +1,15 @@
-// *************************************************************** //
-// Goddamn "C for Rendering" project.                              //
-// Copyright (C) Goddamn Industries 2016. All Rights Reserved.     //
-//                                                                 //
-// This software or any its part is distributed under terms of     //
-// Goddamn Industries End User License Agreement. By downloading   //
-// or using this software or any its part you agree with           //
-// terms of Goddamn Industries End User License Agreement.         //
-// *************************************************************** //
+// $$***************************************************************$$ //
+//                                                                     //
+//                  Goddamn "C for Rendering" project                  //
+//     Copyright (C) Goddamn Industries 2016. All Rights Reserved.     //
+//          ( https://github.com/GoddamnIndustries/GoddamnCr )         //
+//                                                                     //
+//    This software or any its part is distributed under the terms of  //
+//   Goddamn Industries End User License Agreement. By downloading or  //
+//   using this software or any its part you agree with the terms of   //
+//   Goddamn Industries End User License Agreement.                    //
+//                                                                     //
+// $$***************************************************************$$ //
 
 #pragma once
 
@@ -14,36 +17,48 @@
 #include "Utils.h"
 #include "Scanner.h"
 
-#include <map>
-#include <deque>
-#include <stack>
+#include <vector>
 
 namespace Cr
 {
 	namespace Ast
 	{
-		enum class ExpressionBaseType
+		enum class BaseType
 		{
 			Void,
-			Int = (int)Lexeme::Type::CtInteger,
-			Real = (int)Lexeme::Type::CtReal,
-			String = (int)Lexeme::Type::CtString,
+			Int,
+			UInt,
+			Dword = UInt,
+			Half,
+			Float,
+			Double,
 		};	// enum class ExpressionBaseType
 
-		struct ExpressionType
+		struct Type
 		{
-			ExpressionBaseType m_BaseType;
-			char m_Rows = 1, m_Columns = 1;
-			explicit ExpressionType(ExpressionBaseType m_BaseType) : m_BaseType(m_BaseType) {}
+		private:
+			BaseType m_BaseType;
+			uint8_t m_Rows = 1;
+			uint8_t m_Columns = 1;
 
-			bool MatchDimensions(ExpressionType const& other) const
+		public:
+			CRINL explicit Type(BaseType baseType = BaseType::Int) 
+				: m_BaseType(baseType) 
+			{}
+
+			bool MatchDimensions(Type const& other) const
 			{
 				return m_Rows == other.m_Rows && m_Columns == other.m_Columns;
+			}
+
+			bool CanBeCastedToBool() const
+			{
 			}
 		};
 
 		struct Identifier
 		{
+			CRINL virtual ~Identifier() = default;
 		};
 
 		struct Function
@@ -67,13 +82,19 @@ namespace Cr
 			CRINL virtual ~Expression() = default;
 
 		public:
-		//	CRAPI virtual ExpressionType EvaluateType() = 0;
+			CR_API virtual Type GetType() const { return Type(); }
 		};	// class Expression
 
 		class OperandExpression : public Expression
 		{
 		public:
 			OperandExpression(...) {}
+		};
+
+		class ConstantOperandExpression : public Expression
+		{
+		public:
+			ConstantOperandExpression(...) {}
 		};
 
 		// --------------------------------------------------------------- //
@@ -83,7 +104,6 @@ namespace Cr
 		/**
 		 * Base class for all unary expressions.
 		 */
-		// *************************************************************** //
 		class UnaryExpression : public Expression
 		{
 		protected:
@@ -101,11 +121,10 @@ namespace Cr
 		 * Logic unary expression class.
 		 * Sub-expression should have convertible to boolean type.
 		 */
-		// *************************************************************** //
 		class LogicUnaryExpression : public UnaryExpression
 		{
 		public:
-			CRAPI LogicUnaryExpression(Lexeme::Type const op, Expression* const expr)
+			CR_API LogicUnaryExpression(Lexeme::Type const op, Expression* const expr)
 				: UnaryExpression(op, expr)
 			{ }
 		};	// class LogicUnaryExpression
@@ -114,11 +133,10 @@ namespace Cr
 		 * Bitwise unary expression class.
 		 * Sub-expression should have convertible to integral type.
 		 */
-		// *************************************************************** //
 		class BitwiseUnaryExpression : public UnaryExpression
 		{
 		public:
-			CRAPI BitwiseUnaryExpression(Lexeme::Type const op, Expression* const expr)
+			CR_API BitwiseUnaryExpression(Lexeme::Type const op, Expression* const expr)
 				: UnaryExpression(op, expr)
 			{ }
 		};	// class BitwiseUnaryExpression
@@ -126,11 +144,10 @@ namespace Cr
 		/**
 		 * Per-component arithmetic unary expression class.
 		 */
-		// *************************************************************** //
 		class ArithmeticUnaryExpression : public UnaryExpression
 		{
 		public:
-			CRAPI ArithmeticUnaryExpression(Lexeme::Type const op, Expression* const expr)
+			CR_API ArithmeticUnaryExpression(Lexeme::Type const op, Expression* const expr)
 				: UnaryExpression(op, expr)
 			{ }
 		};	// class ArithmeticUnaryExpression
@@ -145,7 +162,6 @@ namespace Cr
 		/**
 		 * Base class for all binary expressions.
 		 */
-		// *************************************************************** //
 		class BinaryExpression : public Expression
 		{
 		protected:
@@ -164,7 +180,6 @@ namespace Cr
 		 * Comma-separated expressions.
 		 * No limitations on left and right sub-expressions.
 		 */
-		// *************************************************************** //
 		class CommaExpression : public BinaryExpression
 		{
 		public:
@@ -178,11 +193,10 @@ namespace Cr
 		 * Per-component logic binary expression class.
 		 * Left and right sub-expressions should have convertible to boolean types of same dimensions.
 		 */
-		// *************************************************************** //
 		class LogicBinaryExpression : public BinaryExpression
 		{
 		public:
-			CRAPI LogicBinaryExpression(Lexeme::Type const op, Expression* const lhs, Expression* const rhs)
+			CR_API LogicBinaryExpression(Lexeme::Type const op, Expression* const lhs, Expression* const rhs)
 				: BinaryExpression(op, lhs, rhs)
 			{ }
 		};	// class LogicBinaryExpression
@@ -191,11 +205,10 @@ namespace Cr
 		 * Per-component bitwise binary expression class.
 		 * Left and right sub-expressions should have convertible to integral types of same dimensions.
 		 */
-		// *************************************************************** //
 		class BitwiseBinaryExpression : public BinaryExpression
 		{
 		public:
-			CRAPI BitwiseBinaryExpression(Lexeme::Type const op, Expression* const lhs, Expression* const rhs)
+			CR_API BitwiseBinaryExpression(Lexeme::Type const op, Expression* const lhs, Expression* const rhs)
 				: BinaryExpression(op, lhs, rhs)
 			{ }
 		};	// class BitwiseBinaryExpression
@@ -204,11 +217,10 @@ namespace Cr
 		 * Per-component arithmetic binary expression class.
 		 * Left and right sub-expressions should have same or convertible types of same dimensions.
 		 */
-		// *************************************************************** //
 		class ArithmeticBinaryExpression : public BinaryExpression
 		{
 		public:
-			CRAPI ArithmeticBinaryExpression(Lexeme::Type const op, Expression* const lhs, Expression* const rhs)
+			CR_API ArithmeticBinaryExpression(Lexeme::Type const op, Expression* const lhs, Expression* const rhs)
 				: BinaryExpression(op, lhs, rhs)
 			{ }
 		};	// class ArithmeticBinaryExpression
@@ -218,16 +230,15 @@ namespace Cr
 		 * Left sub-expression should be valid l-value.
 		 * Left and right sub-expressions should have same or convertible types.
 		 */
-		// *************************************************************** //
 		class AssignmentBinaryExpression : public BinaryExpression
 		{
 		protected:
-			CRAPI AssignmentBinaryExpression(Lexeme::Type const op, Expression* const lhs, Expression* const rhs)
+			CR_API AssignmentBinaryExpression(Lexeme::Type const op, Expression* const lhs, Expression* const rhs)
 				: BinaryExpression(op, lhs, rhs)
 			{ }
 
 		public:
-			CRAPI AssignmentBinaryExpression(Expression* const lhs, Expression* const rhs)
+			CR_API AssignmentBinaryExpression(Expression* const lhs, Expression* const rhs)
 				: BinaryExpression(Lexeme::Type::OpAssignment, lhs, rhs)
 			{ }
 
@@ -238,11 +249,10 @@ namespace Cr
 		 * Left sub-expression should be valid l-value.
 		 * Left and right sub-expressions should have convertible to integral types of same dimensions.
 		 */
-		// *************************************************************** //
 		class BitwiseAssignmentBinaryExpression : public AssignmentBinaryExpression
 		{
 		public:
-			CRAPI BitwiseAssignmentBinaryExpression(Lexeme::Type const op, Expression* const lhs, Expression* const rhs)
+			CR_API BitwiseAssignmentBinaryExpression(Lexeme::Type const op, Expression* const lhs, Expression* const rhs)
 				: AssignmentBinaryExpression(op, lhs, rhs)
 			{ }
 
@@ -253,11 +263,10 @@ namespace Cr
 		 * Left sub-expression should be valid l-value.
 		 * Left and right sub-expressions should have same or convertible types of same dimensions.
 		 */
-		// *************************************************************** //
 		class ArithmeticAssignmentBinaryExpression : public AssignmentBinaryExpression
 		{
 		public:
-			CRAPI ArithmeticAssignmentBinaryExpression(Lexeme::Type const op, Expression* const lhs, Expression* const rhs)
+			CR_API ArithmeticAssignmentBinaryExpression(Lexeme::Type const op, Expression* const lhs, Expression* const rhs)
 				: AssignmentBinaryExpression(op, lhs, rhs)
 			{ }
 
@@ -272,17 +281,16 @@ namespace Cr
 		 * Condition sub-expression should be convertible to boolean expression.
 		 * Branch sub-expressions should have same or convertible types of same dimensions.
 		 */
-		// *************************************************************** //
 		class TernaryExpression : public Expression
 		{
 		private:
-			std::unique_ptr<Expression> m_ConditionExpr;
-			std::unique_ptr<Expression> m_TrueBranchExpr;
-			std::unique_ptr<Expression> m_FalseBranchExpr;
+			std::unique_ptr<Expression> m_CondExpr;
+			std::unique_ptr<Expression> m_TrueExpr;
+			std::unique_ptr<Expression> m_FalseExpr;
 
 		public:
-			CRAPI TernaryExpression(Expression* const conditionExpr, Expression* const trueBranchExpr, Expression* const falseBranchExpr)
-				: m_ConditionExpr(conditionExpr), m_TrueBranchExpr(trueBranchExpr), m_FalseBranchExpr(falseBranchExpr)
+			CR_API TernaryExpression(Expression* const condExpr, Expression* const trueExpr, Expression* const falseExpr)
+				: m_CondExpr(condExpr), m_TrueExpr(trueExpr), m_FalseExpr(falseExpr)
 			{ }
 		};	// class TernaryExpression
 
@@ -293,7 +301,6 @@ namespace Cr
 		/**
 		 * Base class for all statements.
 		 */
-		// *************************************************************** //
 		class Statement
 		{
 		public:
@@ -304,12 +311,10 @@ namespace Cr
 
 		};	// class Statement
 
-		// *************************************************************** //
 		class NullStatement : public Statement
 		{
 		};	// class NullStatement
 
-		// *************************************************************** //
 		class CompoundStatement : public Statement
 		{
 		};	// class CompoundStatement
@@ -318,22 +323,20 @@ namespace Cr
 		// --               Selection statement parsing.                -- //
 		// --------------------------------------------------------------- //
 
-		// *************************************************************** //
 		class SelectionStatement : public Statement
 		{
 		};	// class SelectionStatement
 
-		// *************************************************************** //
 		class IfSelectionStatement : public SelectionStatement
 		{
 		private:
-			std::unique_ptr<Expression> m_ConditionExpr;
-			std::unique_ptr<Statement> m_TrueBranchStatement;
-			std::unique_ptr<Statement> m_FalseBranchStatement;
+			std::unique_ptr<Expression> m_CondExpr;
+			std::unique_ptr<Statement> m_TrueStmt;
+			std::unique_ptr<Statement> m_FalseStmt;
 
 		public:
-			CRAPI IfSelectionStatement(Expression* const conditionExpr, Statement* const trueBranchStatement, Statement* const falseBranchStatement)
-				: m_ConditionExpr(conditionExpr), m_TrueBranchStatement(trueBranchStatement), m_FalseBranchStatement(falseBranchStatement)
+			CR_API IfSelectionStatement(Expression* const condExpr, Statement* const trueStmt, Statement* const falseStmt)
+				: m_CondExpr(condExpr), m_TrueStmt(trueStmt), m_FalseStmt(falseStmt)
 			{ }
 		};	// class IfSelectionStatement
 
@@ -341,55 +344,51 @@ namespace Cr
 		// --               Iteration statement parsing.                -- //
 		// --------------------------------------------------------------- //
 
-		// *************************************************************** //
 		class IterationStatement : public Statement
 		{
 		};	// class IterationStatement
 
-		// *************************************************************** //
 		class DoIterationStatement : public IterationStatement
 		{
 		private:
-			std::unique_ptr<Statement> m_LoopStatement;
-			std::unique_ptr<Expression> m_ConditionExpr;
+			std::unique_ptr<Statement> m_LoopStmt;
+			std::unique_ptr<Expression> m_CondExpr;
 
 		public:
-			CRAPI virtual void Initialize(Statement* const loopStatement, Expression* const conditionExpr)
+			CR_API virtual void Initialize(Statement* const loopStmt, Expression* const condExpr)
 			{
-				m_LoopStatement.reset(loopStatement);
-				m_ConditionExpr.reset(conditionExpr);
+				m_LoopStmt.reset(loopStmt);
+				m_CondExpr.reset(condExpr);
 			}
 		};	// class DoIterationStatement
 
-		// *************************************************************** //
 		class ForIterationStatement : public IterationStatement
 		{
-			std::unique_ptr<Statement> m_InitStatement;
-			std::unique_ptr<Expression> m_ConditionExpr;
-			std::unique_ptr<Expression> m_IterationExpr;
-			std::unique_ptr<Statement> m_LoopStatement;
+			std::unique_ptr<Statement> m_InitStmt;
+			std::unique_ptr<Expression> m_CondExpr;
+			std::unique_ptr<Expression> m_IterExpr;
+			std::unique_ptr<Statement> m_LoopStmt;
 
 		public:
-			CRAPI void Initialize(Statement* const initStatement, Expression* const conditionExpr, Expression* const iterationExpr, Statement* const loopStatement)
+			CR_API void Initialize(Statement* const initStmt, Expression* const condExpr, Expression* const iterExpr, Statement* const loopStmt)
 			{
-				m_InitStatement.reset(initStatement);
-				m_ConditionExpr.reset(conditionExpr);
-				m_IterationExpr.reset(iterationExpr);
-				m_LoopStatement.reset(loopStatement);
+				m_InitStmt.reset(initStmt);
+				m_CondExpr.reset(condExpr);
+				m_IterExpr.reset(iterExpr);
+				m_LoopStmt.reset(loopStmt);
 			}
 		};	// class ForIterationStatement
 
-		// *************************************************************** //
 		class WhileIterationStatement : public IterationStatement
 		{
-			std::unique_ptr<Expression> m_ConditionExpr;
-			std::unique_ptr<Statement> m_LoopStatement;
+			std::unique_ptr<Expression> m_CondExpr;
+			std::unique_ptr<Statement> m_LoopStmt;
 
 		public:
-			CRAPI void Initialize(Expression* const conditionExpr, Statement* const loopStatement)
+			CR_API void Initialize(Expression* const condExpr, Statement* const loopStmt)
 			{
-				m_ConditionExpr.reset(conditionExpr);
-				m_LoopStatement.reset(loopStatement);
+				m_CondExpr.reset(condExpr);
+				m_LoopStmt.reset(loopStmt);
 			}
 		};	// class WhileIterationStatement
 
@@ -397,29 +396,28 @@ namespace Cr
 		// --                  Jump statement parsing.                  -- //
 		// --------------------------------------------------------------- //
 
-		// *************************************************************** //
 		class JumpStatement : public Statement
 		{
 		};	// class JumpStatement
 
-		// *************************************************************** //
 		class BreakJumpStatement : public JumpStatement
 		{
+			//! @todo
 		};	// class BreakJumpStatement
 
-		// *************************************************************** //
 		class ReturnJumpStatement : public JumpStatement
 		{
+			//! @todo
 		};	// class ReturnJumpStatement
 
-		// *************************************************************** //
 		class DiscardJumpStatement : public JumpStatement
 		{
+			//! @todo
 		};	// class DiscardJumpStatement
 
-		// *************************************************************** //
 		class ContinueJumpStatement : public JumpStatement
 		{
+			//! @todo
 		};	// class ContinueJumpStatement
 
 		// --------------------------------------------------------------- //
@@ -429,11 +427,21 @@ namespace Cr
 		// *************************************************************** //
 		class ExpressionStatement : public Statement
 		{
+		private:
+			std::unique_ptr<Expression> m_Expr;
+
+		public:
+			CR_API explicit ExpressionStatement(Expression* const expr) 
+				: m_Expr(expr)
+			{}
 		};	// class ExpressionStatement
 
 		// *************************************************************** //
 		class DeclarationStatement : public Statement
 		{
+		public:
+			//! @todo
+			CR_API DeclarationStatement(Expression* const expr) {}
 		};	// class DeclarationStatement
 
 	}	// namespace Ast
@@ -444,59 +452,69 @@ namespace Cr
 
 	class Parser
 	{
+		typedef AutoReset<Ast::IterationStatement*> AutoResetIterationStatement;
+		typedef AutoResize<std::shared_ptr<Ast::Identifier>> AutoResetIdentifiers;
+
 	private:
 		Profile* m_Profile;
 		Scanner* m_Scanner;
 		
 		Lexeme m_Lexeme;
 
+	private:
 		Ast::Function* m_Function;
-		std::stack<Ast::IterationStatement*> m_IterationStatements;
-		std::deque<std::map<std::string, Ast::Identifier*>> m_ScopedIdentifiers;	// have to use deque to iterate through stack.
+		Ast::IterationStatement* m_TopIterStmt;
+		std::vector<std::shared_ptr<Ast::Identifier>> m_Idents; 
 
 	private:
+		CRINL std::shared_ptr<Ast::Identifier> FindIdentifier(std::string const& name) const;
+		CRINL std::shared_ptr<Ast::Identifier> DeclareVariable(Ast::Type const&, std::string const&)
+		{
+			return std::shared_ptr<Ast::Identifier>(nullptr);
+		}
+
 		CRINT void ReadNextLexeme();
-		CRINL void ExpectLexemeAndReadNext(Lexeme::Type const type);
+		CRINL void ReadNextAndExpectLexeme(Lexeme::Type const type);
+		CRINL void ExpectAndReadNextLexeme(Lexeme::Type const type);
 
-		CRINL Ast::Identifier* FindIdentifier(std::string const& name) const;
+		CR_API Ast::Statement* Parse_Statement();
+		CR_API Ast::Statement* Parse_Statement_Null();
+		CR_API Ast::Statement* Parse_Statement_Compound();
+		CR_API Ast::Statement* Parse_Statement_Selection_If();
+		CR_API Ast::Statement* Parse_Statement_Iter_Do();
+		CR_API Ast::Statement* Parse_Statement_Iter_For();
+		CR_API Ast::Statement* Parse_Statement_Iter_While();
+		CR_API Ast::Statement* Parse_Statement_Jump_Break();
+		CR_API Ast::Statement* Parse_Statement_Jump_Return();
+		CR_API Ast::Statement* Parse_Statement_Jump_Discard();
+		CR_API Ast::Statement* Parse_Statement_Jump_Continue();
+		CR_API Ast::Statement* Parse_Statement_Declaration_OR_Expression();
+		CR_API Ast::Statement* Parse_Statement_Declaration_Variable_OR_Function();
+		CR_API Ast::Statement* Parse_Statement_Declaration_Typedef();
+		CR_API Ast::Statement* Parse_Statement_Declaration_Struct();
+		CR_API Ast::Statement* Parse_Statement_Expression();
 
-		CRAPI Ast::Expression* Parse_Expression();
-		CRAPI Ast::Expression* Parse_Expression_Assignments();
-		CRAPI Ast::Expression* Parse_Expression_Ternary();
-		CRAPI Ast::Expression* Parse_Expression_Or();
-		CRAPI Ast::Expression* Parse_Expression_And();
-		CRAPI Ast::Expression* Parse_Expression_BitwiseOr();
-		CRAPI Ast::Expression* Parse_Expression_BitwiseXor();
-		CRAPI Ast::Expression* Parse_Expression_BitwiseAnd();
-		CRAPI Ast::Expression* Parse_Expression_Equals_OR_NotEquals();
-		CRAPI Ast::Expression* Parse_Expression_Less_OR_LessEquals_OR_Greater_OR_GreaterEquals();
-		CRAPI Ast::Expression* Parse_Expression_BitwiseLeftShift_OR_BitwiseRightShift();
-		CRAPI Ast::Expression* Parse_Expression_Add_OR_Subtract();
-		CRAPI Ast::Expression* Parse_Expression_Multiply_OR_Divide_OR_Modulo();
-		CRAPI Ast::Expression* Parse_Expression_PrefixUnary();
-		CRAPI Ast::Expression* Parse_Expression_OPERAND();
-		
-		CRAPI Ast::Statement* Parse_Statement();
-		CRAPI Ast::Statement* Parse_Statement_Null();
-		CRAPI Ast::Statement* Parse_Statement_Compound();
-		CRAPI Ast::Statement* Parse_Statement_Selection_If();
-		CRAPI Ast::Statement* Parse_Statement_Iteration_Do();
-		CRAPI Ast::Statement* Parse_Statement_Iteration_For();
-		CRAPI Ast::Statement* Parse_Statement_Iteration_While();
-		CRAPI Ast::Statement* Parse_Statement_Jump_Break();
-		CRAPI Ast::Statement* Parse_Statement_Jump_Return();
-		CRAPI Ast::Statement* Parse_Statement_Jump_Discard();
-		CRAPI Ast::Statement* Parse_Statement_Jump_Continue();
-		CRAPI Ast::Statement* Parse_Statement_Declaration_OR_Expression();
-		CRAPI Ast::Statement* Parse_Statement_Declaration();
-		CRAPI Ast::Statement* Parse_Statement_Declaration_Typedef();
-		CRAPI Ast::Statement* Parse_Statement_Declaration_Struct();
-		CRAPI Ast::Statement* Parse_Statement_Expression();
+		CR_API Ast::Expression* Parse_Expression_Condition();
+
+		CR_API Ast::Expression* Parse_Expression();
+		CR_API Ast::Expression* Parse_Expression_Assignments();
+		CR_API Ast::Expression* Parse_Expression_Ternary();
+		CR_API Ast::Expression* Parse_Expression_Or();
+		CR_API Ast::Expression* Parse_Expression_And();
+		CR_API Ast::Expression* Parse_Expression_BitwiseOr();
+		CR_API Ast::Expression* Parse_Expression_BitwiseXor();
+		CR_API Ast::Expression* Parse_Expression_BitwiseAnd();
+		CR_API Ast::Expression* Parse_Expression_Equals_OR_NotEquals();
+		CR_API Ast::Expression* Parse_Expression_Less_OR_LessEquals_OR_Greater_OR_GreaterEquals();
+		CR_API Ast::Expression* Parse_Expression_BitwiseLeftShift_OR_BitwiseRightShift();
+		CR_API Ast::Expression* Parse_Expression_Add_OR_Subtract();
+		CR_API Ast::Expression* Parse_Expression_Multiply_OR_Divide_OR_Modulo();
+		CR_API Ast::Expression* Parse_Expression_PrefixUnary();
 
 	public:
-		CRAPI void ParseProgram();
+		CR_API void ParseProgram();
 
-		Parser(Scanner* scanner) : m_Scanner(scanner) {}
+		Parser(Scanner* scanner) : m_Scanner(scanner) { ReadNextLexeme(); }
 		CRINL Parser(Parser const&) = delete;
 		CRINL Parser& operator= (Parser const&) = delete;
 

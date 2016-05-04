@@ -1,10 +1,15 @@
-// ==========================================================================================
-// Copyright (C) Goddamn Industries 2016. All Rights Reserved.
-// 
-// This software or any its part is distributed under terms of Goddamn Industries End User
-// License Agreement. By downloading or using this software or any its part you agree with 
-// terms of Goddamn Industries End User License Agreement.
-// ==========================================================================================
+// $$***************************************************************$$ //
+//                                                                     //
+//                  Goddamn "C for Rendering" project                  //
+//     Copyright (C) Goddamn Industries 2016. All Rights Reserved.     //
+//          ( https://github.com/GoddamnIndustries/GoddamnCr )         //
+//                                                                     //
+//    This software or any its part is distributed under the terms of  //
+//   Goddamn Industries End User License Agreement. By downloading or  //
+//   using this software or any its part you agree with the terms of   //
+//   Goddamn Industries End User License Agreement.                    //
+//                                                                     //
+// $$***************************************************************$$ //
 
 #pragma once
 #include "Scanner.h"
@@ -58,7 +63,7 @@ namespace Cr
 		/**
 		 * Reads next lexem from the specified stream.
 		 */
-		CRAPI Lexeme GetNextLexeme();
+		CR_API Lexeme GetNextLexeme();
 
 	};	// class Preprocessor
 

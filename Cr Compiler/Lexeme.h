@@ -1,16 +1,39 @@
-// ==========================================================================================
-// Copyright (C) Goddamn Industries 2016. All Rights Reserved.
-// 
-// This software or any its part is distributed under terms of Goddamn Industries End User
-// License Agreement. By downloading or using this software or any its part you agree with 
-// terms of Goddamn Industries End User License Agreement.
-// ==========================================================================================
+// $$***************************************************************$$ //
+//                                                                     //
+//                  Goddamn "C for Rendering" project                  //
+//     Copyright (C) Goddamn Industries 2016. All Rights Reserved.     //
+//          ( https://github.com/GoddamnIndustries/GoddamnCr )         //
+//                                                                     //
+//    This software or any its part is distributed under the terms of  //
+//   Goddamn Industries End User License Agreement. By downloading or  //
+//   using this software or any its part you agree with the terms of   //
+//   Goddamn Industries End User License Agreement.                    //
+//                                                                     //
+// $$***************************************************************$$ //
 
 #pragma once
 #include <memory>
 #include <string>
 #include <map>
 #include <cassert>
+
+/**
+ * Substitutes all combination of scalar, vector and matrix types.
+ */
+#define CrType(Type) Type, \
+	Type##1, Type##1x1, Type##1x2, Type##1x3, Type##1x4, \
+	Type##2, Type##2x1, Type##2x2, Type##2x3, Type##2x4, \
+	Type##3, Type##3x1, Type##3x2, Type##3x3, Type##3x4, \
+	Type##4, Type##4x1, Type##4x2, Type##4x3, Type##4x4
+
+/**
+ * Substitutes all combination of scalar, vector and matrix types for 'switch' statement.
+ */
+#define CrCaseType(Type) Type: \
+	case Type##1: case Type##1x1: case Type##1x2: case Type##1x3: case Type##1x4: \
+	case Type##2: case Type##2x1: case Type##2x2: case Type##2x3: case Type##2x4: \
+	case Type##3: case Type##3x1: case Type##3x2: case Type##3x3: case Type##3x4: \
+	case Type##4: case Type##4x1: case Type##4x2: case Type##4x3: case Type##4x4
 
 namespace Cr
 {
@@ -28,7 +51,7 @@ namespace Cr
 		{
 			Null = 0,
 			IdIdentifier,
-			CtInteger, CtString, CtReal,
+			CtInt, CtUInt, CtDword = CtUInt, CtHalf, CtFloat, CtDouble,
 
 			// Keywords.
 			/*
@@ -103,7 +126,9 @@ namespace Cr
 			KwDo, KwFor, KwWhile, KwBreak, KwContinue, KwReturn,
 			KwRead, KwWrite,
 			KwTypedef, KwStruct,
-			KwInt, KwString, KwReal,
+			KwVoid, CrType(KwBool), CrType(KwInt), CrType(KwUInt), CrType(KwDword), CrType(KwHalf), CrType(KwFloat), CrType(KwDouble),
+			KwTrue, KwFalse,
+			KwReal,
 
 			// Preprocessor keywords.
 			KwPpDefine, KwPpUndef, KwPpDefined,
@@ -151,13 +176,10 @@ namespace Cr
 		 */
 		/// @{
 		explicit Lexeme(int32_t const value)
-			: m_Type(Type::CtInteger), m_ValueInt(value)
-		{}
-		explicit Lexeme(std::string const& value)
-			: m_Type(Type::CtString), m_ValueString(value)
+			: m_Type(Type::CtInt), m_ValueInt(value)
 		{}
 		explicit Lexeme(double const value)
-			: m_Type(Type::CtReal), m_ValueReal(value)
+			: m_Type(Type::CtDouble), m_ValueReal(value)
 		{}
 		explicit Lexeme(PIdentifier const& value)
 			: m_Type(Type::IdIdentifier), m_ValueID(value)
@@ -187,17 +209,12 @@ namespace Cr
 		/// @{
 		int32_t GetValueInt() const
 		{
-			assert(m_Type == Type::CtInteger);
+			assert(m_Type == Type::CtInt);
 			return m_ValueInt;
 		}
-		std::string const& GetValueString() const
+		double GetValueDouble() const
 		{
-			assert(m_Type == Type::CtString);
-			return m_ValueString;
-		}
-		double GetValueReal() const
-		{
-			assert(m_Type == Type::CtReal);
+			assert(m_Type == Type::CtDouble);
 			return m_ValueReal;
 		}
 		std::string const& GetValueID() const
