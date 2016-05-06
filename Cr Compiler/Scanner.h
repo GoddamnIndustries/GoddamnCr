@@ -52,7 +52,11 @@ namespace Cr
 		 * Reads next lexem from the specified stream.
 		 * @returns Scanned lexeme or null lexeme on end of stream.
 		 */
-		CR_API Lexeme GetNextLexeme() throw(ScannerException);
+		CR_API Lexeme GetNextLexemeRaw() throw(ScannerException);
+		CR_API Lexeme GetNextLexeme() throw(ScannerException)
+		{
+			return GetNextLexemeRaw();
+		}
 
 	};	// class Scanner
 

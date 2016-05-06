@@ -17,9 +17,16 @@
 #include <map>
 #include <cassert>
 
+#define CrTypeMaskCreate(m, n) ((m - 1 & 0xFF) << 24) | ((m - 1 & 0xFF) << 16)
+
 /**
  * Substitutes all combination of scalar, vector and matrix types.
  */
+//#define CrType(Type) Type, \
+//	Type##1 = ((int)Type +  1) | CrTypeMaskCreate(1, 1), /**/ Type##1x1 = ((int)Type +  2) | CrTypeMaskCreate(1, 1), /**/ Type##1x2 = ((int)Type +  3) | CrTypeMaskCreate(1, 2), Type##1x3 = ((int)Type +  4) | CrTypeMaskCreate(1, 3), Type##1x4 = ((int)Type + 5) | CrTypeMaskCreate(1, 4), \
+//	Type##2 = ((int)Type +  6) | CrTypeMaskCreate(2, 1), /**/ Type##2x1 = ((int)Type +  7) | CrTypeMaskCreate(2, 1), /**/ Type##2x2 = ((int)Type +  8) | CrTypeMaskCreate(2, 2), Type##2x3 = ((int)Type +  9) | CrTypeMaskCreate(1, 3), Type##1x4 = ((int)Type + 9) | CrTypeMaskCreate(1, 4), \
+//	Type##2 = ((int)Type + 11) | CrTypeMaskCreate(3, 1), /**/ Type##3x1 = ((int)Type + 12) | CrTypeMaskCreate(3, 1), /**/ Type##3x2 = ((int)Type + 13) | CrTypeMaskCreate(3, 2), Type##3x3 = ((int)Type + 14) | CrTypeMaskCreate(1, 3), Type##1x4 = ((int)Type + 9) | CrTypeMaskCreate(1, 4), \
+//	Type##2 = ((int)Type + 15) | CrTypeMaskCreate(4, 1), /**/ Type##4x1 = ((int)Type + 17) | CrTypeMaskCreate(4, 1), /**/ Type##4x2 = ((int)Type + 18) | CrTypeMaskCreate(4, 2), Type##4x3 = ((int)Type + 19) | CrTypeMaskCreate(1, 3), Type##1x4 = ((int)Type + 9) | CrTypeMaskCreate(1, 4), 
 #define CrType(Type) Type, \
 	Type##1, Type##1x1, Type##1x2, Type##1x3, Type##1x4, \
 	Type##2, Type##2x1, Type##2x2, Type##2x3, Type##2x4, \
@@ -122,7 +129,7 @@ namespace Cr
 			*/
 			KwProgram,
 			KwDiscard,
-			KwIf, KwElse, KwSwitch,
+			KwIf, KwElse, KwSwitch, KwCase, KwDefault,
 			KwDo, KwFor, KwWhile, KwBreak, KwContinue, KwReturn,
 			KwRead, KwWrite,
 			KwTypedef, KwStruct,
@@ -142,7 +149,7 @@ namespace Cr
 			OpNot, OpAnd, OpOr,
 			OpBitwiseNot, OpBitwiseAnd, OpBitwiseOr, OpBitwiseXor, OpBitwiseLeftShift, OpBitwiseRightShift,
 			OpAddAssign, OpSubtractAssign, OpMultiplyAssign, OpDivideAssign, OpModuloAssign, OpBitwiseAndAssign, OpBitwiseOrAssign, OpBitwiseXorAssign, OpBitwiseLeftShiftAssign, OpBitwiseRightShiftAssign,
-			OpScopeBegin, OpScopeEnd, OpSubindexBegin, OpSubindexEnd, OpParenthesesBegin, OpParenthesesEnd,
+			OpBraceOpen, OpBraceClose, OpBracketOpen, OpBracketClose, OpParenOpen, OpParenClose,
 			OpSemicolon, OpColon, OpComma, OpDot, OpTernary,
 			OpPreprocessor, OpPreprocessorGlue,
 

@@ -33,6 +33,9 @@
     <ClCompile Include="Profile.cpp">
       <Filter>Файлы исходного кода</Filter>
     </ClCompile>
+    <ClCompile Include="AST.cpp">
+      <Filter>Файлы исходного кода</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Preprocessor.h">
@@ -53,5 +56,13 @@
     <ClInclude Include="Profile.h">
       <Filter>Файлы исходного кода</Filter>
     </ClInclude>
+    <ClInclude Include="AST.h">
+      <Filter>Файлы исходного кода</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <FxCompile Include="TestShader.fx">
+      <Filter>Файлы исходного кода</Filter>
+    </FxCompile>
   </ItemGroup>
 </Project>

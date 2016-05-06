@@ -18,12 +18,13 @@ namespace Cr
 {
 	std::map<std::string, Lexeme::Type> const Lexeme::s_KeywordsTable = {
 		
-		// Keywords
-		{ "program", Type::KwProgram },
+		// Keywords 
+		{ "program", Type::KwProgram },{ "switch", Type::KwSwitch },{ "case", Type::KwCase },{ "default", Type::KwDefault },
+		{ "true",      Type::KwTrue },{ "true",      Type::KwFalse },
 		{ "if",      Type::KwIf      }, { "else",   Type::KwElse   },
 		{ "for",     Type::KwFor     }, { "while",  Type::KwWhile  }, { "break", Type::KwBreak }, { "continue", Type::KwContinue },
 		{ "read",    Type::KwRead    }, { "write",  Type::KwWrite  }, 
-		{ "int",     Type::KwInt     }, { "real", Type::KwReal },
+		{ "int",     Type::KwInt     }, { "float", Type::KwFloat },{ "float4", Type::KwFloat4 },
 
 		// Preprocessor keywords.
 		{ "define", Type::KwPpDefine }, { "undef",  Type::KwPpUndef  }, { "defined", Type::KwPpDefined },

@@ -46,8 +46,8 @@ namespace Cr
 			
 		Parsing_ConstantString,
 
-		Parsing_OpAdd_OR_OpAddAssign_OR_OpInc,
-		Parsing_OpSubtract_OR_OpSubtractAssign_OR_OpDec,
+		Parsing_OpAdd_OR_OpAddAssign_OR_OpInc_OR_ConstantNumber,
+		Parsing_OpSubtract_OR_OpSubtractAssign_OR_OpDec_OR_ConstantNumber,
 		Parsing_OpMultiply_OR_OpMultiplyAssign,
 		Parsing_OpDivide_OR_OpDivideAssign_OR_SignleLineComment_OR_MultiLineComment,
 		Parsing_SingleLineComment,
@@ -90,11 +90,12 @@ namespace Cr
 	 * Reads next lexem from the specified stream.
 	 * @returns Scanned lexeme or null lexeme on end of stream.
 	 */
-	CR_API Lexeme Scanner::GetNextLexeme() throw(ScannerException)
+	//! @todo Add lexeme emerging (E.g. '-', '1' -> '-1'; '"a"', '"b"' -> '"ab"').
+	CR_API Lexeme Scanner::GetNextLexemeRaw() throw(ScannerException)
 	{
-		// Resetting state of the scanner.
 		std::string bufferedString;
 		auto bufferedInt = 0;
+		auto bufferedIntSign = 1;
 		auto bufferedReal = 0.0;
 		auto bufferedRealExponent = 1.0;
 		
@@ -141,15 +142,15 @@ namespace Cr
 							case '"': state = ScannerState::Parsing_ConstantString; break;
 
 							// Or determining operator: possible composite operator...
-							case '+': state = ScannerState::Parsing_OpAdd_OR_OpAddAssign_OR_OpInc; break;
-							case '-': state = ScannerState::Parsing_OpSubtract_OR_OpSubtractAssign_OR_OpDec; break;
+							case '+': state = ScannerState::Parsing_OpAdd_OR_OpAddAssign_OR_OpInc_OR_ConstantNumber; break;
+							case '-': state = ScannerState::Parsing_OpSubtract_OR_OpSubtractAssign_OR_OpDec_OR_ConstantNumber; break;
 							case '*': state = ScannerState::Parsing_OpMultiply_OR_OpMultiplyAssign; break;
 							case '/': state = ScannerState::Parsing_OpDivide_OR_OpDivideAssign_OR_SignleLineComment_OR_MultiLineComment; break;
 							case '%': state = ScannerState::Parsing_OpModulo_OR_OpModuloAssign; break;
 							case '=': state = ScannerState::Parsing_OpAssignment_OR_OpEquals; break;
 							case '!': state = ScannerState::Parsing_OpNot_OR_OpNotEquals; break;
-							case '<': state = ScannerState::Parsing_OpGreater_OR_OpGreaterEquals_OR_OpBitwiseRightShift_OR_OpBitwiseRightShiftAssign; break;
-							case '>': state = ScannerState::Parsing_OpLess_OR_OpLessEquals_OR_OpBitwiseLeftShift_OR_OpBitwiseLeftShiftAssign; break;
+							case '>': state = ScannerState::Parsing_OpGreater_OR_OpGreaterEquals_OR_OpBitwiseRightShift_OR_OpBitwiseRightShiftAssign; break;
+							case '<': state = ScannerState::Parsing_OpLess_OR_OpLessEquals_OR_OpBitwiseLeftShift_OR_OpBitwiseLeftShiftAssign; break;
 							case '&': state = ScannerState::Parsing_OpAnd_OR_OpBitwiseAnd_OR_OpBitwiseAndAssign; break;
 							case '|': state = ScannerState::Parsing_OpOr_OR_OpBitwiseOr_OR_OpBitwiseOrAssign; break;
 							case '^': state = ScannerState::Parsing_OpBitwiseXor_OR_OpBitwiseXorAssign; break;
@@ -163,14 +164,15 @@ namespace Cr
 								{
 									case '~': return Lexeme(Lexeme::Type::OpBitwiseNot);
 									case ';': return Lexeme(Lexeme::Type::OpSemicolon);
+									case '?': return Lexeme(Lexeme::Type::OpTernary);
 									case ':': return Lexeme(Lexeme::Type::OpColon);
 									case ',': return Lexeme(Lexeme::Type::OpComma);
-									case '{': return Lexeme(Lexeme::Type::OpScopeBegin);
-									case '}': return Lexeme(Lexeme::Type::OpScopeEnd);
-									case '[': return Lexeme(Lexeme::Type::OpSubindexBegin);
-									case ']': return Lexeme(Lexeme::Type::OpSubindexEnd);
-									case '(': return Lexeme(Lexeme::Type::OpParenthesesBegin);
-									case ')': return Lexeme(Lexeme::Type::OpParenthesesEnd);
+									case '{': return Lexeme(Lexeme::Type::OpBraceOpen);
+									case '}': return Lexeme(Lexeme::Type::OpBraceClose);
+									case '[': return Lexeme(Lexeme::Type::OpBracketOpen);
+									case ']': return Lexeme(Lexeme::Type::OpBracketClose);
+									case '(': return Lexeme(Lexeme::Type::OpParenOpen);
+									case ')': return Lexeme(Lexeme::Type::OpParenClose);
 									default:
 										throw ScannerException("Unsupported character in the input stream.");
 								}	// switch (m_PrevChar)
@@ -224,7 +226,7 @@ namespace Cr
 					}
 					else
 					{
-						return Lexeme(bufferedInt);
+						return Lexeme(bufferedInt * bufferedIntSign);
 					}
 					break;
 				case ScannerState::Parsing_DECIMAL_ConstantFloat_OR_ConstantDouble_FractionPart:
@@ -238,7 +240,7 @@ namespace Cr
 					}
 					else
 					{
-						return Lexeme(bufferedReal);
+						return Lexeme(bufferedReal * bufferedIntSign);
 					}
 					break;
 
@@ -265,7 +267,7 @@ namespace Cr
 					}
 					else
 					{
-						return Lexeme(bufferedInt);
+						return Lexeme(bufferedInt * bufferedIntSign);
 					}
 					break;
 				case ScannerState::Parsing_HEXADECIMAL_ConstantInteger:
@@ -288,12 +290,12 @@ namespace Cr
 					}
 					else
 					{
-						return Lexeme(bufferedInt);
+						return Lexeme(bufferedInt * bufferedIntSign);
 					}
 					break;
 				
 				// *************************************************************** //
-				case ScannerState::Parsing_OpAdd_OR_OpAddAssign_OR_OpInc:
+				case ScannerState::Parsing_OpAdd_OR_OpAddAssign_OR_OpInc_OR_ConstantNumber:
 					if (m_Char == '+')
 					{
 						ReadNextChar();
@@ -304,10 +306,16 @@ namespace Cr
 						ReadNextChar();
 						return Lexeme(Lexeme::Type::OpAddAssign);
 					}
+					if (isdigit(m_Char))
+					{
+						state = ScannerState::Parsing_DECIMAL_ConstantInteger_OR_ConstantFloat_OR_ConstantDouble;
+						bufferedIntSign = 1;
+						break;
+					}
 					return Lexeme(Lexeme::Type::OpAdd);
 
 				// *************************************************************** //
-				case ScannerState::Parsing_OpSubtract_OR_OpSubtractAssign_OR_OpDec:
+				case ScannerState::Parsing_OpSubtract_OR_OpSubtractAssign_OR_OpDec_OR_ConstantNumber:
 					if (m_Char == '-')
 					{
 						ReadNextChar();
@@ -317,6 +325,12 @@ namespace Cr
 					{
 						ReadNextChar();
 						return Lexeme(Lexeme::Type::OpSubtractAssign);
+					}
+					if (isdigit(m_Char))
+					{
+						state = ScannerState::Parsing_DECIMAL_ConstantInteger_OR_ConstantFloat_OR_ConstantDouble;
+						bufferedIntSign = -1;
+						break;
 					}
 					return Lexeme(Lexeme::Type::OpSubtract);
 
@@ -369,7 +383,7 @@ namespace Cr
 					}
 					if (m_Char == EOF)
 					{
-						throw ScannerException("Unexpected end of stream while scanning multiline comment.");
+						throw ScannerException("Unexpected end of stream while scanning multi-line comment.");
 					}
 					ReadNextChar();
 					break;
@@ -526,40 +540,40 @@ namespace Cr
 		auto inputStream = std::make_shared<IO::StringInputStream>("   ");
 		Scanner scanner(inputStream);
 
-		auto lexeme = scanner.GetNextLexeme();
+		auto lexeme = scanner.GetNextLexemeRaw();
 		assert(lexeme.GetType() == Lexeme::Type::Null);
 	};
 
-	CrUnitTest(ScannerNumeric)
+	/*CrUnitTest(ScannerNumeric)
 	{
 		auto inputStream = std::make_shared<IO::StringInputStream>("1'000 -1.2003");
 		Scanner scanner(inputStream);
 
-		auto lexeme = scanner.GetNextLexeme();
+		auto lexeme = scanner.GetNextLexemeRaw();
 		CrAssert(lexeme.GetValueInt() == 1000);
 
-		lexeme = scanner.GetNextLexeme();
+		lexeme = scanner.GetNextLexemeRaw();
 		CrAssert(lexeme.GetType() == Lexeme::Type::OpSubtract);
 
-		lexeme = scanner.GetNextLexeme();
+		lexeme = scanner.GetNextLexemeRaw();
 		CrAssert(lexeme.GetValueDouble() == 1.2003);
 
-		lexeme = scanner.GetNextLexeme();
+		lexeme = scanner.GetNextLexemeRaw();
 		CrAssert(lexeme.GetType() == Lexeme::Type::Null);
-	};
+	};*/
 
 	CrUnitTest(ScannerKeywordsAndIDs)
 	{
 		auto inputStream = std::make_shared<IO::StringInputStream>("if ifa");
 		Scanner scanner(inputStream);
 
-		auto lexeme = scanner.GetNextLexeme();
+		auto lexeme = scanner.GetNextLexemeRaw();
 		CrAssert(lexeme.GetType() == Lexeme::Type::KwIf);
 
-		lexeme = scanner.GetNextLexeme();
+		lexeme = scanner.GetNextLexemeRaw();
 		CrAssert(lexeme.GetType() == Lexeme::Type::IdIdentifier);
 
-		lexeme = scanner.GetNextLexeme();
+		lexeme = scanner.GetNextLexemeRaw();
 		CrAssert(lexeme.GetType() == Lexeme::Type::Null);
 	};
 
@@ -568,7 +582,7 @@ namespace Cr
 		auto inputStream = std::make_shared<IO::StringInputStream>("// \n/*/**/");
 		Scanner scanner(inputStream);
 
-		auto lexeme = scanner.GetNextLexeme();
+		auto lexeme = scanner.GetNextLexemeRaw();
 		CrAssert(lexeme.GetType() == Lexeme::Type::Null);
 	};
 
@@ -579,7 +593,7 @@ namespace Cr
 
 		try
 		{
-			scanner.GetNextLexeme();
+			scanner.GetNextLexemeRaw();
 			CrAssert(0);
 		}
 		catch (ScannerException const&)

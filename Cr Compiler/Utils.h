@@ -14,10 +14,11 @@
 #pragma once
 #include <cassert>
 #include <memory>
-#include <vector>
+#include <list>
 
 #define CR_API
-#define CRINT
+#define CR_INTERNAL
+#define CR_HELPER
 #if _MSC_VER
 #	define CRINL __forceinline
 #else
@@ -49,24 +50,31 @@ namespace Cr
 			m_What = m_Default;
 		}
 	};	// struct AutoReset
+#define CrAssignAndReset(what, to) \
+	AutoReset<decltype(what)> what ## Reset(what, to); \
+	static_cast<void>(what ## Reset)
+
 	template<typename Tp>
 	struct AutoResize
 	{
-		std::vector<Tp>& m_What;
-		size_t m_DefaultSize;
+		std::list<Tp>& m_What;
 	public:
 		AutoResize(AutoResize const&) = delete;
 		AutoResize& operator= (AutoResize const&) = delete;
 
-		explicit AutoResize(std::vector<Tp>& what)
-			: m_What(what), m_DefaultSize(what.size())
+		explicit AutoResize(std::list<Tp>& what)
+			: m_What(what)
 		{
+			m_What.emplace_back();
 		}
 		~AutoResize()
 		{
-			m_What.resize(m_DefaultSize);
+			m_What.pop_back();
 		}
-	};	// struct AutoReset
+	};	// struct AutoResize
+#define CrGrowAndShrink(what) \
+//	AutoReset<decltype(what)::value_type> what ## Resize(what); \
+//	static_cast<void>(what ## Resize)
 
 	// Tiny exception hierarchy.
 	struct Exception : public std::exception

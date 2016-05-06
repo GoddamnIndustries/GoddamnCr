@@ -47,11 +47,11 @@ namespace Cr
 		{
 			Scanner scanner(std::make_shared<IO::StringInputStream>(m_Line.c_str()));
 
-			auto const firstLexeme = scanner.GetNextLexeme();
+			auto const firstLexeme = scanner.GetNextLexemeRaw();
 			if (firstLexeme.GetType() == Lexeme::Type::OpPreprocessor)
 			{
 				// This line contains preprocessor directive.
-				auto const preprocessorDirectiveLexeme = scanner.GetNextLexeme();
+				auto const preprocessorDirectiveLexeme = scanner.GetNextLexemeRaw();
 				switch (preprocessorDirectiveLexeme.GetType())
 				{
 					case Lexeme::Type::KwPpDefine: ParseDirective_DEFINE(scanner); break;
@@ -110,9 +110,9 @@ namespace Cr
 			{
 				// Reading the whole line to substitute macros in it.
 				std::list<Lexeme> lineContents = { firstLexeme };
-				for (auto lineContentLexeme = scanner.GetNextLexeme()
+				for (auto lineContentLexeme = scanner.GetNextLexemeRaw()
 						; lineContentLexeme.GetType() != Lexeme::Type::Null
-						; lineContentLexeme = scanner.GetNextLexeme())
+						; lineContentLexeme = scanner.GetNextLexemeRaw())
 				{
 					lineContents.push_back(lineContentLexeme);
 				}
@@ -127,9 +127,9 @@ namespace Cr
 	/**
 	 * Parses '#define' directive.
 	 */
-	CRINT void Preprocessor::ParseDirective_DEFINE(Scanner& scanner) throw(PreprocessorException)
+	CR_INTERNAL void Preprocessor::ParseDirective_DEFINE(Scanner& scanner) throw(PreprocessorException)
 	{
-		auto const macroIdentifierLexeme = scanner.GetNextLexeme();
+		auto const macroIdentifierLexeme = scanner.GetNextLexemeRaw();
 		if (macroIdentifierLexeme.GetType() != Lexeme::Type::IdIdentifier)
 		{
 			throw PreprocessorException("Identifier expected in the '#define' directive.");
@@ -139,14 +139,14 @@ namespace Cr
 
 		// *************************************************************** //
 		// Determining whether this directive has any parameters. 
-		auto const macroFirstContentLexemeOrParams = scanner.GetNextLexeme();
-		if (macroFirstContentLexemeOrParams.GetType() == Lexeme::Type::OpParenthesesBegin)
+		auto const macroFirstContentLexemeOrParams = scanner.GetNextLexemeRaw();
+		if (macroFirstContentLexemeOrParams.GetType() == Lexeme::Type::OpParenOpen)
 		{
 			macro.m_HasAnyParams = true;
 
 			// This macro comes with parameters.
-			auto const macroFirstParamOrEndParams = scanner.GetNextLexeme();
-			if (macroFirstParamOrEndParams.GetType() != Lexeme::Type::OpParenthesesEnd)
+			auto const macroFirstParamOrEndParams = scanner.GetNextLexemeRaw();
+			if (macroFirstParamOrEndParams.GetType() != Lexeme::Type::OpParenClose)
 			{
 				// Macro has not empty parameter list.
 				for (auto macroParam = macroFirstParamOrEndParams;;)
@@ -158,26 +158,26 @@ namespace Cr
 
 					macro.m_Params.insert(macroParam.GetValueID());
 					
-					auto macroParamCommaOrEnd = scanner.GetNextLexeme();
-					if (macroParamCommaOrEnd.GetType() != Lexeme::Type::OpParenthesesEnd && macroParamCommaOrEnd.GetType() != Lexeme::Type::OpComma)
+					auto macroParamCommaOrEnd = scanner.GetNextLexemeRaw();
+					if (macroParamCommaOrEnd.GetType() != Lexeme::Type::OpParenClose && macroParamCommaOrEnd.GetType() != Lexeme::Type::OpComma)
 					{
 						throw PreprocessorException("Comma or closing parentheses expected.");
 					}
 
-					if (macroParamCommaOrEnd.GetType() == Lexeme::Type::OpParenthesesEnd)
+					if (macroParamCommaOrEnd.GetType() == Lexeme::Type::OpParenClose)
 					{
 						break;
 					}
-					macroParam = scanner.GetNextLexeme();
+					macroParam = scanner.GetNextLexemeRaw();
 				}
 			}
 		}
 
 		// *************************************************************** //
 		// Reading whole contents of a macro.
-		for (auto macroContentLexeme = scanner.GetNextLexeme()
+		for (auto macroContentLexeme = scanner.GetNextLexemeRaw()
 			; macroContentLexeme.GetType() != Lexeme::Type::Null
-			; macroContentLexeme = scanner.GetNextLexeme())
+			; macroContentLexeme = scanner.GetNextLexemeRaw())
 		{
 			macro.m_Contents.push_back(macroContentLexeme);
 		}
@@ -186,9 +186,9 @@ namespace Cr
 	/**
 	 * Parses '#undef' directive.
 	 */
-	CRINT void Preprocessor::ParseDirective_UNDEF(Scanner& scanner) throw(PreprocessorException)
+	CR_INTERNAL void Preprocessor::ParseDirective_UNDEF(Scanner& scanner) throw(PreprocessorException)
 	{
-		auto const macroIdLexeme = scanner.GetNextLexeme();
+		auto const macroIdLexeme = scanner.GetNextLexemeRaw();
 		if (macroIdLexeme.GetType() != Lexeme::Type::IdIdentifier)
 		{
 			throw PreprocessorException("Identifier expected in the '#undef' directive.");
@@ -204,7 +204,7 @@ namespace Cr
 	 * Substitues all entries of predefined macros in the list of lexemes.
 	 * @param lineContents List of the lexemes.
 	 */
-	CRINT void Preprocessor::SubstituteForLine(std::list<Lexeme>& lineContents)
+	CR_INTERNAL void Preprocessor::SubstituteForLine(std::list<Lexeme>& lineContents)
 	{
 		// Substituting all existing macros.
 		for (auto allMacroSubstituted = false; !allMacroSubstituted;)

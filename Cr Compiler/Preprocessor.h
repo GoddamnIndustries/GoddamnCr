@@ -41,12 +41,12 @@ namespace Cr
 		std::vector<Lexeme> m_CachedLexems;
 
 	private:
-		CRINT bool ReadNextLine();
+		CR_ÿ“≈” “‘ƒ bool ReadNextLine();
 		void InternallyReadLexemes();
 
-		CRINT void ParseDirective_DEFINE(Scanner& scanner) throw(PreprocessorException);
-		CRINT void ParseDirective_UNDEF(Scanner& scanner) throw(PreprocessorException);
-		CRINT void SubstituteForLine(std::list<Lexeme>& line);
+		CR_ÿ“≈” “‘ƒ void ParseDirective_DEFINE(Scanner& scanner) throw(PreprocessorException);
+		CR_ÿ“≈” “‘ƒ void ParseDirective_UNDEF(Scanner& scanner) throw(PreprocessorException);
+		CR_ÿ“≈” “‘ƒ void SubstituteForLine(std::list<Lexeme>& line);
 
 	public:
 

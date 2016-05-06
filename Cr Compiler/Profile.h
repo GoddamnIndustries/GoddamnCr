@@ -15,14 +15,37 @@
 
 #include "Utils.h"
 #include "Lexeme.h"
+#include <vector>
 
 namespace Cr
 {
 	namespace Ast
 	{
+		class BitwiseNotExpression;
+		class NotExpression;
+		class NegateExpression;
+		class ArithmeticAssignmentBinaryExpression;
+		class BitwiseAssignmentBinaryExpression;
+		class AssignmentBinaryExpression;
+		class BitwiseBinaryExpression;
+		class ArithmeticBinaryExpression;
+		class LogicBinaryExpression;
+		class ConstantExpression;
+		class TernaryExpression;
+		class CommaExpression;
+		class SwitchDefaultCase;
+		class SwitchCase;
+		class CompoundStatement;
+		class ExpressionStatement;
+		class DiscardJumpStatement;
+		class ReturnJumpStatement;
+		class ContinueJumpStatement;
+		class BreakJumpStatement;
+		class IfSelectionStatement;
 		class Statement;
+		class SwitchSelectionStatement;
 		class IterationStatement;
-		class DoIterationStatement;
+		class DoWhileIterationStatement;
 		class ForIterationStatement;
 		class WhileIterationStatement;
 		class Expression;
@@ -37,23 +60,24 @@ namespace Cr
 		// **                     Expressions parsing.                  ** //
 		// *************************************************************** //
 
-		CR_API virtual Ast::Expression* CreateLogicUnaryExpression(Lexeme::Type const op, Ast::Expression* const expr) ;
-		CR_API virtual Ast::Expression* CreateBitwiseUnaryExpression(Lexeme::Type const op, Ast::Expression* const expr) ;
-		CR_API virtual Ast::Expression* CreateArithmeticUnaryExpression(Lexeme::Type const op, Ast::Expression* const expr) ;
+		CR_API virtual Ast::NotExpression* CreateNotExpression(Ast::Expression* const expr) ;
+		CR_API virtual Ast::BitwiseNotExpression* CreateBitwiseNotExpression(Ast::Expression* const expr) ;
+		CR_API virtual Ast::NegateExpression* CreateNegateExpression(Ast::Expression* const expr) ;
 		
-		CR_API virtual Ast::Expression* CreateCommaExpression(Ast::Expression* const lhs, Ast::Expression* const rhs) ;
+		CR_API virtual Ast::CommaExpression* CreateCommaExpression();
 		
-		CR_API virtual Ast::Expression* CreateLogicBinaryExpression(Lexeme::Type const op, Ast::Expression* const lhs, Ast::Expression* const rhs) ;
-		CR_API virtual Ast::Expression* CreateBitwiseBinaryExpression(Lexeme::Type const op, Ast::Expression* const lhs, Ast::Expression* const rhs) ;
-		CR_API virtual Ast::Expression* CreateArithmeticBinaryExpression(Lexeme::Type const op, Ast::Expression* const lhs, Ast::Expression* const rhs) ;
+		CR_API virtual Ast::LogicBinaryExpression* CreateLogicBinaryExpression(Lexeme::Type const op, Ast::Expression* const lhs, Ast::Expression* const rhs) ;
+		CR_API virtual Ast::BitwiseBinaryExpression* CreateBitwiseBinaryExpression(Lexeme::Type const op, Ast::Expression* const lhs, Ast::Expression* const rhs) ;
+		CR_API virtual Ast::ArithmeticBinaryExpression* CreateArithmeticBinaryExpression(Lexeme::Type const op, Ast::Expression* const lhs, Ast::Expression* const rhs) ;
 	
-		CR_API virtual Ast::Expression* CreateAssignmentBinaryExpression(Ast::Expression* const lhs, Ast::Expression* const rhs) ;
-		CR_API virtual Ast::Expression* CreateBitwiseAssignmentBinaryExpression(Lexeme::Type const op, Ast::Expression* const lhs, Ast::Expression* const rhs) ;
-		CR_API virtual Ast::Expression* CreateArithmeticAssignmentBinaryExpression(Lexeme::Type const op, Ast::Expression* const lhs, Ast::Expression* const rhs) ;
+		CR_API virtual Ast::AssignmentBinaryExpression* CreateAssignmentBinaryExpression(Ast::Expression* const lhs, Ast::Expression* const rhs) ;
+		CR_API virtual Ast::BitwiseAssignmentBinaryExpression* CreateBitwiseAssignmentBinaryExpression(Lexeme::Type const op, Ast::Expression* const lhs, Ast::Expression* const rhs) ;
+		CR_API virtual Ast::ArithmeticAssignmentBinaryExpression* CreateArithmeticAssignmentBinaryExpression(Lexeme::Type const op, Ast::Expression* const lhs, Ast::Expression* const rhs) ;
 
-		CR_API virtual Ast::Expression* CreateTernaryExpression(Ast::Expression* const condExpr, Ast::Expression* const trueExpr, Ast::Expression* const falseExpr);
+		CR_API virtual Ast::TernaryExpression* CreateTernaryExpression(Ast::Expression* const condExpr, Ast::Expression* const thenExpr, Ast::Expression* const elseExpr);
 
-		CR_API virtual Ast::Expression* CreateValueExpression(...);
+		CR_API virtual Ast::Expression* CreateValueExpression(...) {return nullptr;}
+		CR_API virtual Ast::ConstantExpression* CreateConstExpression();
 		CR_API virtual Ast::Expression* CreateConstExpression(bool const valueBool);
 		CR_API virtual Ast::Expression* CreateConstExpression(int32_t const valueInt);
 		CR_API virtual Ast::Expression* CreateConstExpression(uint32_t const valueUInt);
@@ -64,21 +88,24 @@ namespace Cr
 		// **                     Statements parsing.                   ** //
 		// *************************************************************** //
 
-		CR_API virtual Ast::Statement* CreateNullStatement() ;
-		CR_API virtual Ast::Statement* CreateCompoundStatement(...) ;
+		CR_API virtual Ast::CompoundStatement* CreateCompoundStatement();
+		CR_API virtual Ast::CompoundStatement* CreateCompoundStatement(std::vector<std::unique_ptr<Ast::Statement>>&& stmts);
 
-		CR_API virtual Ast::Statement* CreateIfSelectionStatement(Ast::Expression* const condExpr, Ast::Statement* const trueStmt, Ast::Statement* const falseStmt) ;
+		CR_API virtual Ast::IfSelectionStatement* CreateIfSelectionStatement() ;
+		CR_API virtual Ast::SwitchSelectionStatement* CreateSwitchSelectionStatement();
+		CR_API virtual Ast::SwitchCase* CreateSwitchCase();
+		CR_API virtual Ast::SwitchDefaultCase* CreateSwitchDefaultCase();
 
-		CR_API virtual Ast::DoIterationStatement* CreateDoIterationStatement() ;
+		CR_API virtual Ast::DoWhileIterationStatement* CreateDoIterationStatement() ;
 		CR_API virtual Ast::ForIterationStatement* CreateForIterationStatement() ;
 		CR_API virtual Ast::WhileIterationStatement* CreateWhileIterationStatement() ;
 
-		CR_API virtual Ast::Statement* CreateBreakJumpStatement(Ast::IterationStatement* const breakTo) ;
-		CR_API virtual Ast::Statement* CreateReturnJumpStatement(Ast::Function* const function, Ast::Expression* const expr) ;
-		CR_API virtual Ast::Statement* CreateDiscardJumpStatement() ;
-		CR_API virtual Ast::Statement* CreateContinueJumpStatement(Ast::IterationStatement* const continueWith) ;
+		CR_API virtual Ast::BreakJumpStatement* CreateBreakJumpStatement();
+		CR_API virtual Ast::ContinueJumpStatement* CreateContinueJumpStatement();
+		CR_API virtual Ast::ReturnJumpStatement* CreateReturnJumpStatement() ;
+		CR_API virtual Ast::DiscardJumpStatement* CreateDiscardJumpStatement();
 
-		CR_API virtual Ast::Statement* CreateExpressionStatement(Ast::Expression* const expression);
+		CR_API virtual Ast::ExpressionStatement* CreateExpressionStatement();
 	};
 
 }	// namespace Cr

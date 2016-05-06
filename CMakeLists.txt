@@ -15,6 +15,6 @@ set(SOURCE_FILES
     "Cr Compiler/Preprocessor.h"
     "Cr Compiler/Scanner.cpp"
     "Cr Compiler/Scanner.h"
-    "Cr Compiler/Utils.h")
+    "Cr Compiler/Utils.h" "Cr Compiler/AST.cpp" "Cr Compiler/AST.h")
 
 add_executable(GoddamnCr ${SOURCE_FILES})

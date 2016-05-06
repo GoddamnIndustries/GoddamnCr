@@ -3,17 +3,19 @@
   <component name="NewModuleRootManager">
     <content url="file://$MODULE_DIR$">
       <sourceFolder url="file://$MODULE_DIR$/Cr Compiler/CrCompiler.cpp" isTestSource="false" />
-      <sourceFolder url="file://$MODULE_DIR$/Cr Compiler/Scanner.cpp" isTestSource="false" />
-      <sourceFolder url="file://$MODULE_DIR$/Cr Compiler/Lexeme.cpp" isTestSource="false" />
-      <sourceFolder url="file://$MODULE_DIR$/Cr Compiler/Preprocessor.cpp" isTestSource="false" />
-      <sourceFolder url="file://$MODULE_DIR$/Cr Compiler/Preprocessor.h" isTestSource="false" />
-      <sourceFolder url="file://$MODULE_DIR$/Cr Compiler/Parser.cpp" isTestSource="false" />
-      <sourceFolder url="file://$MODULE_DIR$/Cr Compiler/Utils.h" isTestSource="false" />
-      <sourceFolder url="file://$MODULE_DIR$/Cr Compiler/Lexeme.h" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/Cr Compiler/Profile.h" isTestSource="false" />
-      <sourceFolder url="file://$MODULE_DIR$/Cr Compiler/Scanner.h" isTestSource="false" />
-      <sourceFolder url="file://$MODULE_DIR$/Cr Compiler/Parser.h" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/Cr Compiler/Lexeme.h" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/Cr Compiler/Profile.cpp" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/Cr Compiler/Preprocessor.h" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/Cr Compiler/Scanner.h" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/Cr Compiler/AST.h" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/Cr Compiler/Utils.h" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/Cr Compiler/Scanner.cpp" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/Cr Compiler/Parser.h" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/Cr Compiler/AST.cpp" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/Cr Compiler/Lexeme.cpp" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/Cr Compiler/Parser.cpp" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/Cr Compiler/Preprocessor.cpp" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/CMakeLists.txt" isTestSource="false" />
     </content>
     <orderEntry type="sourceFolder" forTests="false" />
