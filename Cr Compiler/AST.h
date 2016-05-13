@@ -20,27 +20,11 @@
 namespace Cr
 {
 	class Parser;
+	template<typename T> using std__shared_ptr = T*;
+	CrDefineExceptionBase(ParserException, WorkflowException);
+
 	namespace Ast
 	{
-		enum class BaseType
-		{
-			Struct = -255,
-			Sampler1D,
-			Sampler2D,
-			Sampler3D,
-			SamplerCube,
-			// ...
-			Null = 0,
-			Void,
-			Bool,
-			Int,
-			UInt,
-			Dword = UInt,
-			Half,
-			Float,
-			Double,
-		};	// enum class ExpressionBaseType
-
 		union Value
 		{
 		public:
@@ -73,7 +57,9 @@ namespace Cr
 				return m_Matrix[i][j];
 			}
 
+			//
 			// Unary ops.
+			//
 			CRINL Value operator+() const
 			{
 				return *this;
@@ -99,17 +85,19 @@ namespace Cr
 				Value result;
 				for (auto i = 0; i < 4; ++i)
 					for (auto j = 0; j < 4; ++j)
-						result(i, j) = ~static_cast<uint64_t>(m_Matrix[i][j]);
+						result(i, j) = ~static_cast<int32_t>(m_Matrix[i][j]);
 				return result;
 			}
 
+			//
 			// Binary logic ops.
+			//
 			CRINL Value operator|(Value const& rhs) const
 			{
 				Value result;
 				for (auto i = 0; i < 4; ++i)
 					for (auto j = 0; j < 4; ++j)
-						result(i, j) = static_cast<uint64_t>(m_Matrix[i][j]) | static_cast<uint64_t>(rhs(i, j));
+						result(i, j) = static_cast<int32_t>(m_Matrix[i][j]) | static_cast<int32_t>(rhs(i, j));
 				return result;
 			}
 			CRINL Value operator&(Value const& rhs) const
@@ -117,7 +105,7 @@ namespace Cr
 				Value result;
 				for (auto i = 0; i < 4; ++i)
 					for (auto j = 0; j < 4; ++j)
-						result(i, j) = static_cast<uint64_t>(m_Matrix[i][j]) & static_cast<uint64_t>(rhs(i, j));
+						result(i, j) = static_cast<int32_t>(m_Matrix[i][j]) & static_cast<int32_t>(rhs(i, j));
 				return result;
 			}
 			CRINL Value operator^(Value const& rhs) const
@@ -125,7 +113,7 @@ namespace Cr
 				Value result;
 				for (auto i = 0; i < 4; ++i)
 					for (auto j = 0; j < 4; ++j)
-						result(i, j) = static_cast<uint64_t>(m_Matrix[i][j]) ^ static_cast<uint64_t>(rhs(i, j));
+						result(i, j) = static_cast<int32_t>(m_Matrix[i][j]) ^ static_cast<int32_t>(rhs(i, j));
 				return result;
 			}
 			CRINL Value operator<<(Value const& rhs) const
@@ -133,7 +121,7 @@ namespace Cr
 				Value result;
 				for (auto i = 0; i < 4; ++i)
 					for (auto j = 0; j < 4; ++j)
-						result(i, j) = static_cast<uint64_t>(m_Matrix[i][j]) << static_cast<uint64_t>(rhs(i, j));
+						result(i, j) = static_cast<int32_t>(m_Matrix[i][j]) << static_cast<int32_t>(rhs(i, j));
 				return result;
 			}
 			CRINL Value operator>>(Value const& rhs) const
@@ -141,11 +129,13 @@ namespace Cr
 				Value result;
 				for (auto i = 0; i < 4; ++i)
 					for (auto j = 0; j < 4; ++j)
-						result(i, j) = static_cast<uint64_t>(m_Matrix[i][j]) >> static_cast<uint64_t>(rhs(i, j));
+						result(i, j) = static_cast<int32_t>(m_Matrix[i][j]) >> static_cast<int32_t>(rhs(i, j));
 				return result;
 			}
 
+			//
 			// Binary bitwise ops.
+			//
 			CRINL Value operator||(Value const& rhs) const
 			{
 				Value result;
@@ -211,7 +201,9 @@ namespace Cr
 				return result;
 			}
 			
+			//
 			// Binary arithmetic ops.
+			//
 			CRINL Value operator+(Value const& rhs) const
 			{
 				Value result;
@@ -241,26 +233,65 @@ namespace Cr
 				Value result;
 				for (auto i = 0; i < 4; ++i)
 					for (auto j = 0; j < 4; ++j)
-						result(i, j) = m_Matrix[i][j] / rhs(i, j);
+					{
+						auto const rhsv = rhs(i, j);
+						if (rhsv == 0.0)
+						{
+							throw ParserException("Division by zero occurred while evaluating expression.");
+						}
+						result(i, j) = m_Matrix[i][j] / rhsv;
+					}
 				return result;
 			}
 			CRINL Value operator%(Value const& rhs) const
 			{
 				Value result;
-				for (auto i = 0; i < 4; ++i)
+				for (auto i = 0; i < 4; ++i) 
 					for (auto j = 0; j < 4; ++j)
-						result(i, j) = static_cast<uint64_t>(m_Matrix[i][j]) % static_cast<uint64_t>(rhs(i, j));
+					{
+						auto const rhsv = static_cast<int32_t>(rhs(i, j));
+						if (rhsv == 0)
+						{
+							throw ParserException("Division by zero occurred while evaluating expression.");
+						}
+						result(i, j) = static_cast<int32_t>(m_Matrix[i][j]) % rhsv;
+					}
 				return result;
 			}
 
 		};	// union Value
 
+		enum class BaseType
+		{
+			Struct = -255,
+			Sampler1D,
+			Sampler2D,
+			Sampler3D,
+			SamplerCUBE,
+			Texture1D,
+			Texture2D,
+			Texture3D,
+			TextureCUBE,
+			// ...
+			Null = 0,
+			Void,
+			Bool,
+			Int = (int)Lexeme::Type::CtInt,
+			UInt = (int)Lexeme::Type::CtUInt,
+			Dword = UInt,
+			Float = (int)Lexeme::Type::CtFloat,
+			Double = (int)Lexeme::Type::CtDouble,
+		};	// enum class ExpressionBaseType
+
 		struct Type
 		{
+			friend class Parser;
+
 		private:
 			BaseType m_BaseType;
-			uint8_t  m_Rows;
-			uint8_t  m_Columns;
+			struct Structure* m_Struct = nullptr;
+			uint8_t  m_Rows = 1;
+			uint8_t  m_Columns = 1;
 
 		public:
 			CRINL explicit Type(BaseType baseType = BaseType::Null, uint8_t rows = 1, uint8_t columns = 1)
@@ -269,10 +300,18 @@ namespace Cr
 			CRINL explicit Type(BaseType baseType, Type const& type)
 				: m_BaseType(baseType), m_Rows(type.m_Rows), m_Columns(type.m_Columns)
 			{}
+			CRINL explicit Type(Structure* const structure)
+				: m_BaseType(BaseType::Struct), m_Struct(structure)
+			{}
+
+			CRINL bool IsStruct() const
+			{
+				return m_Struct != nullptr;
+			}
 
 			CRINL bool IsScalar() const
 			{
-				return m_Rows == 1 && m_Columns == 1 && m_BaseType > BaseType::Void;
+				return m_Rows == 1 && m_Columns == 1 && m_BaseType > BaseType::Void && m_Struct == nullptr;
 			}
 			CRINL bool IsScalar(BaseType const lowerType) const
 			{
@@ -281,6 +320,12 @@ namespace Cr
 			CRINL bool IsScalar(BaseType const lowerType, BaseType const higherType) const
 			{
 				return IsScalar() && m_BaseType >= lowerType && m_BaseType <= higherType;
+			}
+
+			CRINL bool operator== (Type const& other) const
+			{
+				return m_BaseType == other.m_BaseType && m_Rows == other.m_Rows && m_Columns == other.m_Columns
+					&& m_Struct == other.m_Struct;
 			}
 
 			CRINL bool operator< (Type const& type) const
@@ -302,18 +347,17 @@ namespace Cr
 
 			CRINL bool operator== (BaseType const baseType) const
 			{
-				CrAssert(0);
-				return IsScalar() && m_BaseType == baseType;
+				return m_BaseType == baseType;
 			}
 			CRINL bool operator!= (BaseType const baseType) const
 			{
-				CrAssert(0);
-				return IsScalar() && m_BaseType != baseType;
+				return m_BaseType != baseType;
 			}
 
 			CRINL bool IsIncompatibleWith(Type const& other) const
 			{
-				return m_Rows != other.m_Rows || m_Columns != other.m_Columns;
+				return m_Struct != other.m_Struct
+					|| m_Rows != other.m_Rows || m_Columns != other.m_Columns;
 			}
 
 		};
@@ -329,10 +373,11 @@ namespace Cr
 		{
 			friend class Parser;
 
-		private:
+		public:
 			Type m_Type;
 			bool m_IsLValue = false;
 			bool m_IsConstexpr = false;
+			bool m_HasSideEffects = false;
 
 		public:
 			CRINL Expression() = default;
@@ -362,61 +407,6 @@ namespace Cr
 		};	// class Expression
 
 		/**
-		 * Compile-time constant expression.
-		 */
-		class ConstantExpression : public Expression
-		{
-			friend class Parser;
-
-		protected:
-			Value m_Value;
-
-		public:
-			CRINL explicit ConstantExpression() : m_Value({}) {}
-			CR_API Value Evaluate() const override
-			{
-				return m_Value;
-			}
-		};	// class ConstantExpression
-
-		struct Identifier : std::enable_shared_from_this<Identifier>
-		{
-		protected:
-			Type m_Type;
-		public:
-			CRINL virtual ~Identifier() = default;
-		};	// struct Identifier
-
-		struct Variable : public Identifier
-		{
-			friend class Parser;
-
-		protected:
-			std::string m_Name;
-			std::unique_ptr<Expression> m_InitExpr;
-
-		};	// struct Variable
-
-		struct Function : public Identifier
-		{
-			CRINL Type GetReturnType() { return Type(); }
-		};	// struct Function
-
-		/**
-		 * Identifier expression.
-		 */
-		class IdentifierExpression : public Expression
-		{
-			friend class Parser;
-
-		protected:
-			std::shared_ptr<Identifier> m_Ident;
-
-		public:
-			CRINL explicit IdentifierExpression(Identifier* const ident) : m_Ident(ident) {}
-		};	// class ConstantExpression
-
-		/**
 		 * Comma-separated expressions.
 		 * No limitations on left and right sub-expressions.
 		 */
@@ -429,12 +419,101 @@ namespace Cr
 			std::unique_ptr<Expression> m_Rhs;
 		};	// class CommaExpression
 
-		class OperandExpression : public Expression
+		// --------------------------------------------------------------- //
+		// Operand expressions.
+		// --------------------------------------------------------------- //
+
+		struct Identifier
 		{
+			friend class Parser;
+		protected:
+			Type m_Type;
+			std::string m_Name;
 		public:
-			OperandExpression(...) {}
-		};
+			CRINL virtual ~Identifier() = default;
+		};	// struct Identifier
+
+		struct Typedef : public Identifier
+		{
+			friend class Parser;
+		protected:
+			Type m_Type;
+		};	// struct Typedef
+
+		struct VariableOrFunction : public Identifier
+		{
+			friend class Parser;
+		protected:
+			std::string m_Semantic;
+		};	// struct VariableOrFunction
+
+		struct Variable : public VariableOrFunction
+		{
+			friend class Parser;
+
+		protected:
+			std::unique_ptr<Expression> m_InitExpr;
+
+		};	// struct Variable
+
+		struct Structure : public Identifier
+		{
+			friend class Parser;
+			std::vector<std__shared_ptr<Variable>> m_Vars;
+		};	// struct Structure
+
+		struct Function : public VariableOrFunction
+		{
+			CRINL Type GetReturnType() { return Type(); }
+		};	// struct Function
+
+		/**
+		 * Identifier expression.
+		 */
+		class IdentifierExpression : public Expression
+		{
+			friend class Parser;
+
+		protected:
+			std__shared_ptr<Identifier> m_Ident;
+
+		public:
+			CRINL explicit IdentifierExpression(Identifier* const ident) : m_Ident(ident) {}
+		};	// class ConstantExpression
+
+		/**
+		 * Compile-time constant expression.
+		 */
+		class ConstantExpression : public Expression
+		{
+			friend class Parser;
+
+		protected:
+			Value m_Value;
+
+		public:
+			CRINL explicit ConstantExpression(Value const& value, Type const& type) 
+				: m_Value(value)
+			{
+				m_Type = type;
+				m_IsConstexpr = true;
+			}
+			CR_API Value Evaluate() const override
+			{
+				return m_Value;
+			}
+		};	// class ConstantExpression
+
+		class SubscriptExpression : public Expression
+		{
+			friend class Parser;
 	
+		protected:
+			std::unique_ptr<Expression> m_Expr;
+			std::string m_Subscript;
+
+		};	// class SubscriptExpression
+
 		// --------------------------------------------------------------- //
 		// --                  Unary expression parsing.                -- //
 		// --------------------------------------------------------------- //
@@ -505,6 +584,27 @@ namespace Cr
 			{
 				CrAssert(IsConstexpr());
 				return -m_Expr->Evaluate();
+			}
+		};	// class NegateExpression
+
+		/**
+		 * Per-component arithmetic unary expression class.
+		 */
+		class CastExpression : public UnaryExpression
+		{
+			friend class Parser;
+
+		protected:
+			Type m_CastTo;
+
+		public:
+			CR_API explicit CastExpression(Type const& castTo, Expression* const expr)
+				: UnaryExpression(Lexeme::Type::Null, expr), m_CastTo(castTo)
+			{ }
+
+			CR_API Value Evaluate() const override
+			{
+				return m_Expr->Evaluate();
 			}
 		};	// class NegateExpression
 
@@ -701,7 +801,7 @@ namespace Cr
 			{
 				CrAssert(IsConstexpr());
 				auto const cond = m_CondExpr->Evaluate();
-				return cond.m_Scalar != 0.0 ? m_ThenExpr->Evaluate() : m_ElseExpr->Evaluate();
+				return cond.To<bool>() ? m_ThenExpr->Evaluate() : m_ElseExpr->Evaluate();
 			}
 		};	// class TernaryExpression
 
@@ -709,11 +809,102 @@ namespace Cr
 		// **                     Statements parsing.                   ** //
 		// *************************************************************** //
 
+		class Jumps
+		{
+		private:
+			bool m_PerformsAnyJump = false;
+			bool m_PerformsBreak = false;
+			bool m_PerformsContinue = false;
+			bool m_PerformsReturn = false;
+			bool m_PerformsDiscard = false;
+
+		private:
+			CRINL void PerformAnyJump()
+			{
+				m_PerformsAnyJump = m_PerformsBreak || m_PerformsContinue || m_PerformsReturn || m_PerformsDiscard;
+			}
+		public:
+			CRINL bool PerformsAnyJump() const
+			{
+				return m_PerformsAnyJump;
+			}
+
+			CRINL void PerformBreak(bool const value = true)
+			{
+				m_PerformsBreak = value;
+				PerformAnyJump();
+			}
+			CRINL bool PerformsBreak() const
+			{
+				return m_PerformsBreak;
+			}
+
+			CRINL void PerformContinue(bool const value = true)
+			{
+				m_PerformsContinue = value;
+				PerformAnyJump();
+			}
+			CRINL bool PerformsContinue() const
+			{
+				return m_PerformsContinue;
+			}
+
+			CRINL void PerformReturn(bool const value = true)
+			{
+				m_PerformsReturn = value;
+				PerformAnyJump();
+			}
+			CRINL bool PerformsReturn() const
+			{
+				return m_PerformsReturn;
+			}
+
+			CRINL void PerformDiscard(bool const value = true)
+			{
+				m_PerformsDiscard = value;
+				PerformAnyJump();
+			}
+			CRINL bool PerformsDiscard() const
+			{
+				return m_PerformsDiscard;
+			}
+
+			CRINL Jumps operator& (Jumps const& other) const
+			{
+				Jumps result;
+				result.m_PerformsAnyJump = m_PerformsAnyJump || other.m_PerformsAnyJump;
+				result.m_PerformsBreak = m_PerformsBreak && other.m_PerformsBreak;
+				result.m_PerformsContinue = m_PerformsContinue && other.m_PerformsContinue;
+				result.m_PerformsReturn = m_PerformsReturn && other.m_PerformsReturn;
+				result.m_PerformsDiscard = m_PerformsDiscard && other.m_PerformsDiscard;
+				return result;
+			}
+			CRINL Jumps& operator&= (Jumps const& other)
+			{
+				m_PerformsAnyJump |= other.m_PerformsAnyJump;
+				m_PerformsBreak &= other.m_PerformsBreak;
+				m_PerformsContinue &= other.m_PerformsContinue;
+				m_PerformsReturn &= other.m_PerformsReturn;
+				m_PerformsDiscard &= other.m_PerformsDiscard;
+				return *this;
+			}
+
+			CRINL operator bool() const
+			{
+				return m_PerformsAnyJump;
+			}
+		};	// class Jumps
+
 		/**
 		 * Base class for all statements.
 		 */
 		class Statement
 		{
+			friend class Parser;
+
+		private:
+			Jumps m_PerformsJump;
+
 		public:
 			CRINL Statement() = default;
 			CRINL Statement(Statement const&) = delete;
@@ -766,18 +957,13 @@ namespace Cr
 			CR_API virtual void Initialize(Expression* const condExpr, Statement* const thenStmt, Statement* const elseStmt);
 		};	// class IfSelectionStatement
 
-		class SwitchCase
+		class SwitchSection
 		{	
 			friend class Parser;
 
 		private:
 			std::vector<std::unique_ptr<Statement>> m_Stmts;
-		};	// class SwitchCase
-
-		class SwitchDefaultCase : public SwitchCase
-		{
-			friend class Parser;
-		};	// class SwitchCase
+		};	// class SwitchSection
 
 		/**
 		 * Simplified 'switch' selection statement class.
@@ -789,9 +975,9 @@ namespace Cr
 			friend class Parser;
 
 		private:
-			std::unique_ptr<Expression> m_SwitchExpr;
-			std::shared_ptr<SwitchCase> m_DfltCase;
-			std::map<int64_t, std::shared_ptr<SwitchCase>> m_Cases;
+			std::unique_ptr<Expression> m_SelectionExpr;
+			std__shared_ptr<SwitchSection> m_DefaultSection;
+			std::map<int64_t, std__shared_ptr<SwitchSection>> m_Sections;
 
 		public:
 			CR_API virtual void Initialize(Expression* const switchExpr, ...);
@@ -806,6 +992,9 @@ namespace Cr
 		 */
 		class IterationStatement : public Statement
 		{
+			friend class Parser;
+
+		private:
 		};	// class IterationStatement
 
 		/**
@@ -820,8 +1009,6 @@ namespace Cr
 			std::unique_ptr<Expression> m_CondExpr;
 			std::unique_ptr<Statement> m_LoopStmt;
 
-		public:
-			CR_API virtual void Initialize(Expression* const condExpr, Statement* const loopStmt) {}
 		};	// class WhileIterationStatement
 
 		/**
@@ -836,8 +1023,6 @@ namespace Cr
 			std::unique_ptr<Statement> m_LoopStmt;
 			std::unique_ptr<Expression> m_CondExpr;
 
-		public:
-			CR_API virtual void Initialize(Statement* const loopStmt, Expression* const condExpr) {}
 		};	// class DoIterationStatement
 
 		/**
@@ -854,8 +1039,6 @@ namespace Cr
 			std::unique_ptr<Expression> m_StepExpr;
 			std::unique_ptr<Statement> m_LoopStmt;
 
-		public:
-			CR_API virtual void Initialize(Statement* const initStmt, Expression* const condExpr, Expression* const iterExpr, Statement* const loopStmt) {}
 		};	// class ForIterationStatement
 
 		// --------------------------------------------------------------- //
@@ -879,8 +1062,6 @@ namespace Cr
 		private:
 			Statement* m_BreakTo = nullptr;
 
-		public:
-			CR_API virtual void Initialize(Statement* const breakTo) {}
 		};	// class BreakJumpStatement
 
 		/**
@@ -893,8 +1074,6 @@ namespace Cr
 		private:
 			Statement* m_ContinueWith = nullptr;
 
-		public:
-			CR_API virtual void Initialize(Statement* const continueWith) {}
 		};	// class ContinueJumpStatement
 
 		/**
@@ -908,8 +1087,6 @@ namespace Cr
 			Function* m_ReturnTo = nullptr;
 			std::unique_ptr<Expression> m_Expr;
 
-		public:
-			CR_API virtual void Initialize(Function* const returnTo, Expression* const expr) {}
 		};	// class ReturnJumpStatement
 
 		/**
@@ -920,8 +1097,6 @@ namespace Cr
 		{
 			friend class Parser;
 
-		public:
-			CR_API virtual void Initialize() {}
 		};	// class DiscardJumpStatement
 
 		// --------------------------------------------------------------- //
@@ -938,8 +1113,6 @@ namespace Cr
 		private:
 			std::unique_ptr<Expression> m_Expr;
 
-		public:
-			CR_API virtual void Initialize(Expression* const expr) {}
 		};	// class ExpressionStatement
 
 		// *************************************************************** //
@@ -948,7 +1121,9 @@ namespace Cr
 			friend class Parser;
 
 		private:
-			std::vector<std::shared_ptr<Variable>> m_Vars;
+			std::vector<std__shared_ptr<Variable>> m_Vars;
+			std::vector<std__shared_ptr<Function>> m_Funcs;
+			std::vector<std__shared_ptr<Structure>> m_Structs;
 
 		};	// class DeclarationStatement
 

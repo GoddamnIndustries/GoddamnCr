@@ -13,43 +13,53 @@
 
 #pragma once
 
-#include "Lexeme.h"
-#include "Utils.h"
-#include "Scanner.h"
+#include "Preprocessor.h"
 #include "AST.h"
 
-#include <vector>
 #include <list>
 
 namespace Cr
 {
-	CrDefineExceptionBase(ParserException, WorkflowException);
-
 	class Profile;
 
-	class Parser
+	/** 
+	 * Represents a simple syntax and semantic analyzer and evaluator for Cr language.
+	 */
+	class Parser final
 	{
-	private:
-		Profile* m_Profile;
-		Scanner* m_Scanner;
+	public:
+		CR_API Parser(Parser const&) = delete;
+		CR_API Parser& operator= (Parser const&) = delete;
+
+		/**
+		 * Initializes a new parser from the specified preprocessor.
+		 */
+		CR_API explicit Parser(Preprocessor* scanner)
+			: m_Preprocesser(scanner) { ReadNextLexeme(); }
 		
-		Lexeme m_Lexeme;
+		CR_API void ParseProgram();
 
 	private:
-		bool m_DoUnroll = true, m_DoAnalyse = true;
-		Ast::Function* m_Function;
+		Profile*        m_Profile;
+		Preprocessor*   m_Preprocesser;
+		Lexeme          m_Lexeme;
+		Ast::Function*  m_Function;
 		Ast::Statement* m_JumpOnBreak;
-		Ast::/*IterationStatement*/Statement* m_JumpOnContinue;
-		std::list<std::map<std::string, std::shared_ptr<Ast::Identifier>>> m_ScopedIdents;
+		Ast::Statement* m_JumpOnContinue;
+		std::list<std::map<std::string, std__shared_ptr<Ast::Identifier>>> m_ScopedIdents;
 
-	private:
 		CRINL Ast::Identifier* FindIdentifier(std::string const& name)
 		{
-			return m_ScopedIdents.back()[name].get();
+			return m_ScopedIdents.back()[name];
 		}
+		CRINL Ast::Identifier* FindIdentifier()
+		{
+			return m_ScopedIdents.back()[m_Lexeme.GetValueID()];
+		}
+
 		CRINL void DeclareVariable(Ast::Variable* const var)
 		{
-			m_ScopedIdents.back()[var->m_Name].reset(var);
+			m_ScopedIdents.back()[var->m_Name] = var;
 		}
 
 		CR_INTERNAL void ReadNextLexeme();
@@ -57,25 +67,34 @@ namespace Cr
 		CRINL void ExpectLexeme(Lexeme::Type const type);
 		CRINL void ReadNextAndExpectLexeme(Lexeme::Type const type);
 
-		CR_API Ast::Statement* Parse_Statement();
-		CR_API Ast::Statement* Parse_Statement_Compound();
-		CR_API Ast::Statement* Parse_Statement_Selection_If();
-		CR_API Ast::Statement* Parse_Statement_Selection_Switch();
-		CR_API Ast::Statement* Parse_Statement_Iteration_Do();
-		CR_API Ast::Statement* Parse_Statement_Iteration_For();
-		CR_API Ast::Statement* Parse_Statement_Iteration_While();
-		CR_API Ast::Statement* Parse_Statement_Jump_Break();
-		CR_API Ast::Statement* Parse_Statement_Jump_Return();
-		CR_API Ast::Statement* Parse_Statement_Jump_Discard();
-		CR_API Ast::Statement* Parse_Statement_Jump_Continue();
-		CR_API Ast::Statement* Parse_Statement_Declaration_OR_Expression();
-		CR_API Ast::Statement* Parse_Statement_Declaration_Variable_OR_Function();
-		CR_API Ast::Statement* Parse_Statement_Declaration_Typedef();
-		CR_API Ast::Statement* Parse_Statement_Declaration_Struct();
-		CR_API Ast::Statement* Parse_Statement_Expression();
-
-		CR_API Ast::Statement* Parse_Statement_Scoped() { return Parse_Statement(); }
+		// Recursive descent parsing methods.
+		CR_INTERNAL Ast::Statement* Parse_Statement();
+		CR_INTERNAL Ast::Statement* Parse_Statement_Compound();
+		CR_INTERNAL Ast::Statement* Parse_Statement_Selection_If();
+		CR_INTERNAL Ast::Statement* Parse_Statement_Selection_Switch();
+		CR_INTERNAL Ast::Statement* Parse_Statement_Iteration_Do();
+		CR_INTERNAL Ast::Statement* Parse_Statement_Iteration_For();
+		CR_INTERNAL Ast::Statement* Parse_Statement_Iteration_While();
+		CR_INTERNAL Ast::Statement* Parse_Statement_Jump_Break();
+		CR_INTERNAL Ast::Statement* Parse_Statement_Jump_Return();
+		CR_INTERNAL Ast::Statement* Parse_Statement_Jump_Discard();
+		CR_INTERNAL Ast::Statement* Parse_Statement_Jump_Continue();
 		
+		CR_HELPER Ast::Type ParseHelper_Type();
+		CR_INTERNAL Ast::Statement* Parse_Statement_Declaration_OR_Expression(bool const allowFuncDecl = false);
+		CR_INTERNAL Ast::Statement* Parse_Statement_Declaration_Variable_OR_Function(Ast::Type const& type, bool const allowFuncDecl = false);
+		CR_INTERNAL Ast::Statement* Parse_Statement_Declaration_Typedef();
+		CR_INTERNAL Ast::Statement* Parse_Statement_Declaration_Struct();
+
+		CR_INTERNAL Ast::Statement* Parse_Statement_Expression();
+		CR_INTERNAL Ast::Statement* Parse_Statement_Scoped()
+		{
+			m_ScopedIdents.emplace_back();
+			auto const stmt = Parse_Statement();
+			m_ScopedIdents.pop_back();
+			return stmt;
+		}
+
 		CR_INTERNAL Ast::Expression* Parse_Expression();
 		CR_INTERNAL Ast::Expression* Parse_Expression_Comma();
 		CR_INTERNAL Ast::Expression* Parse_Expression_Assignments();
@@ -94,14 +113,14 @@ namespace Cr
 		CR_INTERNAL Ast::Expression* Parse_Expression_Add_OR_Subtract();
 		CR_INTERNAL Ast::Expression* Parse_Expression_Multiply_OR_Divide_OR_Modulo();
 		CR_INTERNAL Ast::Expression* Parse_Expression_PrefixUnary();
-		CR_INTERNAL Ast::Expression* Parse_Expression_Unary();
-
-	public:
-		CR_API void ParseProgram();
-
-		Parser(Scanner* scanner) : m_Scanner(scanner) { ReadNextLexeme(); }
-		CRINL Parser(Parser const&) = delete;
-		CRINL Parser& operator= (Parser const&) = delete;
+		CR_INTERNAL Ast::Expression* Parse_Expression_PrefixUnary_Plus();
+		CR_INTERNAL Ast::Expression* Parse_Expression_PrefixUnary_Negate();
+		CR_INTERNAL Ast::Expression* Parse_Expression_PrefixUnary_Not();
+		CR_INTERNAL Ast::Expression* Parse_Expression_PrefixUnary_BitwiseNot();
+		CR_INTERNAL Ast::Expression* Parse_Expression_PrefixUnary_Cast_OR_Paren();
+		CR_INTERNAL Ast::Expression* Parse_Expression_PrefixUnary_Paren();
+		CR_INTERNAL Ast::Expression* Parse_Expression_PrefixUnary_Factor();
+		CR_INTERNAL Ast::Expression* Parse_Expression_PrefixUnary_Operand();
 
 	};	// class Parser
 

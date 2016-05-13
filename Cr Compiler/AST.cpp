@@ -41,6 +41,6 @@ namespace Cr
 		{
 			throw ParserException("Expression of the 'switch' statement must be convertible to scalar integral value.");
 		}
-		m_SwitchExpr.reset(switchExpr);
+		m_SelectionExpr.reset(switchExpr);
 	}
 }

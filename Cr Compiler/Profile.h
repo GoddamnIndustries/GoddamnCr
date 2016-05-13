@@ -21,6 +21,8 @@ namespace Cr
 {
 	namespace Ast
 	{
+		struct Type;
+		union Value;
 		class BitwiseNotExpression;
 		class NotExpression;
 		class NegateExpression;
@@ -34,7 +36,7 @@ namespace Cr
 		class TernaryExpression;
 		class CommaExpression;
 		class SwitchDefaultCase;
-		class SwitchCase;
+		class SwitchSection;
 		class CompoundStatement;
 		class ExpressionStatement;
 		class DiscardJumpStatement;
@@ -77,12 +79,7 @@ namespace Cr
 		CR_API virtual Ast::TernaryExpression* CreateTernaryExpression(Ast::Expression* const condExpr, Ast::Expression* const thenExpr, Ast::Expression* const elseExpr);
 
 		CR_API virtual Ast::Expression* CreateValueExpression(...) {return nullptr;}
-		CR_API virtual Ast::ConstantExpression* CreateConstExpression();
-		CR_API virtual Ast::Expression* CreateConstExpression(bool const valueBool);
-		CR_API virtual Ast::Expression* CreateConstExpression(int32_t const valueInt);
-		CR_API virtual Ast::Expression* CreateConstExpression(uint32_t const valueUInt);
-		CR_API virtual Ast::Expression* CreateConstExpression(float const valueFloat);
-		CR_API virtual Ast::Expression* CreateConstExpression(double const valueDouble);
+		CR_API virtual Ast::ConstantExpression* CreateConstExpression(Ast::Value const& value, Ast::Type const& type);
 
 		// *************************************************************** //
 		// **                     Statements parsing.                   ** //
@@ -93,8 +90,7 @@ namespace Cr
 
 		CR_API virtual Ast::IfSelectionStatement* CreateIfSelectionStatement() ;
 		CR_API virtual Ast::SwitchSelectionStatement* CreateSwitchSelectionStatement();
-		CR_API virtual Ast::SwitchCase* CreateSwitchCase();
-		CR_API virtual Ast::SwitchDefaultCase* CreateSwitchDefaultCase();
+		CR_API virtual Ast::SwitchSection* CreateSwitchSection();
 
 		CR_API virtual Ast::DoWhileIterationStatement* CreateDoIterationStatement() ;
 		CR_API virtual Ast::ForIterationStatement* CreateForIterationStatement() ;

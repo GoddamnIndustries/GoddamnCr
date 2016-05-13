@@ -18,6 +18,7 @@
 #include <vector>
 #include <algorithm>
 
+/// @todo Cleanup the whole mess here.
 namespace Cr
 {
 	// *************************************************************** //
@@ -29,7 +30,7 @@ namespace Cr
 	 */
 	CRINL void Parser::ReadNextLexeme()
 	{
-		m_Lexeme = m_Scanner->GetNextLexemeRaw();
+		m_Lexeme = m_Preprocesser->GetNextLexeme();
 	}
 
 	/**
@@ -54,7 +55,7 @@ namespace Cr
 	{
 		if (m_Lexeme != type)
 		{
-			throw ParserException("something was expected.");
+			throw ParserException("Unexpected lexeme.");
 		}
 	}
 	CRINL void Parser::ReadNextLexeme(Lexeme::Type const type)
@@ -85,6 +86,14 @@ namespace Cr
 			throw ParserException("Incompatible types in the sub-expressions of the binary expression.");
 		}
 	}
+	CRINL static void VerifyTypesArithmetic(Ast::Type const& lhsExprType, Ast::Type const& rhsExprType)
+	{
+		if (lhsExprType.IsStruct() ||
+			rhsExprType.IsStruct())
+		{
+			throw ParserException("Arithmetic types expected.");
+		}
+	}
 	CRINL static void VerifyTypeIntegral(Ast::Type const& exprType)
 	{
 		if (!exprType.IsScalar(Ast::BaseType::Bool, Ast::BaseType::UInt))
@@ -106,37 +115,31 @@ namespace Cr
 	// *************************************************************** //
 
 	// { STATEMENT ::= ;
-	//             | COMPOUND-STMT
-    //             | IF-ELSE-STMT
-	//             | SWITCH-STMT
-	//             | WHILE-STMT
-	//             | DO-WHILE-STMT
-	//             | FOR-STMT
-	//             | BREAK-STMT
-	//             | CONTINUE-STMT
-	//             | RETURN-STMT
-	//             | DISCARD-STMT
-	//             | DECLARATION-STMT
-	//             | EXPRESSION-STMT }
+	//               | @{ COMPOUND-STMT
+    //               | @if IF-ELSE-STMT | @switch SWITCH-STMT
+	//               | @while WHILE-STMT | @do DO-WHILE-STMT | @for FOR-STMT
+	//               | @break BREAK-STMT | @continue CONTINUE-STMT | @return RETURN-STMT | @discard DISCARD-STMT
+	//               | DECL-EXPR-STMT
+	//               }
 	// *************************************************************** //
 	CR_INTERNAL Ast::Statement* Parser::Parse_Statement()
 	{
 		switch (m_Lexeme.GetType())
 		{
 			// Null statements.
-			// *************************************************************** //
+			// ---------------------------------------------------
 			case Lexeme::Type::OpSemicolon:
 				ReadNextLexeme();
 				return nullptr;
 
 			// Compound statements.
-			// *************************************************************** //
+			// ---------------------------------------------------
 			case Lexeme::Type::OpBraceOpen:
 				ReadNextLexeme();
 				return Parse_Statement_Compound();
 
 			// Selection statements.
-			// *************************************************************** //
+			// ---------------------------------------------------
 			case Lexeme::Type::KwIf:
 				ReadNextLexeme();
 				return Parse_Statement_Selection_If();
@@ -145,7 +148,7 @@ namespace Cr
 				return Parse_Statement_Selection_Switch();
 
 			// Iteration statements.
-			// *************************************************************** //
+			// ---------------------------------------------------
 			case Lexeme::Type::KwWhile:
 				ReadNextLexeme();
 				return Parse_Statement_Iteration_While();
@@ -157,7 +160,7 @@ namespace Cr
 				return Parse_Statement_Iteration_For();
 
 			// Jump statements.
-			// *************************************************************** //
+			// ---------------------------------------------------
 			case Lexeme::Type::KwBreak:
 				ReadNextLexeme();
 				return Parse_Statement_Jump_Break();
@@ -172,63 +175,69 @@ namespace Cr
 				return Parse_Statement_Jump_Discard();
 
 			// Declaration or expression statements.
-			// *************************************************************** //
+			// ---------------------------------------------------
 			default:
 				return Parse_Statement_Declaration_OR_Expression();
 		}
 	}
 
-	// { COMPOUND-STMT ::= { [statement] [statement] ... } }
+	// { COMPOUND-STMT ::= { [<statement> ... <statement>] }
 	// *************************************************************** //
 	CR_INTERNAL Ast::Statement* Parser::Parse_Statement_Compound()
 	{
-		if (m_Lexeme != Lexeme::Type::OpBraceClose)
+		if (m_Lexeme == Lexeme::Type::OpBraceClose)
 		{
-			// Non-empty statement.
-			// Step 1. Parse statement.
-			auto const compoundStmt = m_Profile->CreateCompoundStatement();
-			auto compoundStatementJumpedAway = false;
-			while (m_Lexeme != Lexeme::Type::OpBraceClose)
-			{
-				auto const innerStmt = Parse_Statement();
-				if (compoundStatementJumpedAway)
-				{
-					/// @todo Uncomment warning.
-				//	throw ParserException("Unreachable code detected.");
-					delete innerStmt;
-					continue;
-				}
-
-				if (innerStmt != nullptr)
-				{
-					compoundStmt->m_Stmts.emplace_back(innerStmt);
-					if (dynamic_cast<Ast::JumpStatement*>(innerStmt) != nullptr)
-					{
-						// This is jump statement. That means that any other following statements  
-						// of the scope are unreachable.
-						compoundStatementJumpedAway = true;
-					}
-				}
-			}
-			ReadNextLexeme();
-
-			// Step 2. Try to unroll.
-			if (compoundStmt->m_Stmts.empty())
-			{
-				// Empty compound statement.
-				delete compoundStmt;
-				return nullptr;
-			}
-			if (compoundStmt->m_Stmts.size() == 1)
-			{
-				// Compound statement with single expression.
-				auto const evaluatedStmt = compoundStmt->m_Stmts[0].release();
-				delete compoundStmt;
-				return evaluatedStmt;
-			}
-			return compoundStmt;
+			// Just skipping empty compound statement.
+			return nullptr;
 		}
-		return nullptr;
+
+		// Step 1. Parse statement.
+		// ---------------------------------------------------
+		m_ScopedIdents.emplace_back();
+		auto const compoundStmt = m_Profile->CreateCompoundStatement();
+		auto parsingUnreachableCode = false;
+		while (m_Lexeme != Lexeme::Type::OpBraceClose)
+		{
+			auto const innerStmt = Parse_Statement();
+			if (parsingUnreachableCode)
+			{
+				/// @todo Uncomment warning.
+			//	throw ParserException("Unreachable code detected.");
+				delete innerStmt;
+				continue;
+			}
+
+			if (innerStmt != nullptr)
+			{
+				compoundStmt->m_Stmts.emplace_back(innerStmt);
+				compoundStmt->m_PerformsJump = innerStmt->m_PerformsJump;
+				if (innerStmt->m_PerformsJump)
+				{
+					// This is jump statement. That means that any other following statements  
+					// of the scope are unreachable.
+					parsingUnreachableCode = true;
+				}
+			}
+		}
+		ReadNextLexeme();
+		m_ScopedIdents.pop_back();
+
+		// Step 2. Try to unroll.
+		// ---------------------------------------------------
+		if (compoundStmt->m_Stmts.empty())
+		{
+			// Empty compound statement.
+			delete compoundStmt;
+			return nullptr;
+		}
+		if (compoundStmt->m_Stmts.size() == 1)
+		{
+			// Compound statement with single expression.
+			auto const unrolledStmt = compoundStmt->m_Stmts.front().release();
+			delete compoundStmt;
+			return unrolledStmt;
+		}
+		return compoundStmt;
 	}
 
 	// --------------------------------------------------------------- //
@@ -240,6 +249,7 @@ namespace Cr
 	CR_INTERNAL Ast::Statement* Parser::Parse_Statement_Selection_If()
 	{
 		// Step 1. Parse statement.
+		// ---------------------------------------------------
 		auto const ifStmt = m_Profile->CreateIfSelectionStatement();
 
 		ReadNextLexeme(Lexeme::Type::OpParenOpen);
@@ -257,9 +267,11 @@ namespace Cr
 			// Else statement was specified.
 			ReadNextLexeme();
 			ifStmt->m_ElseStmt.reset(Parse_Statement_Scoped());
+			ifStmt->m_PerformsJump = ifStmt->m_ThenStmt->m_PerformsJump & ifStmt->m_ElseStmt->m_PerformsJump;
 		}
 		
-		// Step 2. Try to unroll.
+		// Step 2. Try to evaluate.
+		// ---------------------------------------------------
 		if (ifStmt->m_CondExpr->IsConstexpr())
 		{
 			// 'if' statement could be evaluated at compile-time.
@@ -277,125 +289,142 @@ namespace Cr
 		return ifStmt;
 	}
 
-	// { SWITCH-STMT ::= switch (<expression>) { [<SWITCH-CASE>] ... [<SWITCH-COND>] } 
-	//   SWITCH-CASE ::= default: [[<statement>] ... [<statement>] break;]
-	//                 | case <constexpr>: [[<statement>] ... [<statement>] break;] }
+	// { SWITCH-STMT ::= switch (<expression>);
+	//                 | switch (<expression>) { [<SWITCH-CASE> ... <SWITCH-CASE>] } 
+	//   SWITCH-CASE ::= default: [<statement>] ... [<statement>]
+	//                 | case <expression>: [<statement>] ... [<statement>] }
 	// *************************************************************** //
 	CR_INTERNAL Ast::Statement* Parser::Parse_Statement_Selection_Switch()
 	{
 		// Step 1. Parse statement.
+		// ---------------------------------------------------
 		auto const switchStmt = m_Profile->CreateSwitchSelectionStatement();
-		auto const oldJumpOnBreak = m_JumpOnBreak;
-		m_JumpOnBreak = switchStmt;
+		CrAssignAndReset(m_JumpOnBreak, switchStmt);
 
 		ReadNextLexeme(Lexeme::Type::OpParenOpen);
-		switchStmt->m_SwitchExpr.reset(Parse_Expression());
-		if (!switchStmt->m_SwitchExpr->GetType().IsScalar(Ast::BaseType::Bool, Ast::BaseType::UInt))
+		switchStmt->m_SelectionExpr.reset(Parse_Expression());
+		if (!switchStmt->m_SelectionExpr->GetType().IsScalar())
 		{
-			throw ParserException("Selection expression of the 'switch' statement must be convertible to scalar "
-								  "integral value.");
+			throw ParserException("Selection expression of the 'switch' statement must be scalar value.");
 		}
 		ReadNextLexeme(Lexeme::Type::OpParenClose);
 
 		if (m_Lexeme == Lexeme::Type::OpSemicolon)
 		{
 			/// @todo Uncomment warning.
-			// This is rather strange, but correct syntax pattern: switch(<expression>);
 		//	throw ParserException("Suspicious empty 'switch' loop statement.");
-			goto Outer;
+			ReadNextLexeme();
 		}
-
-		ReadNextLexeme(Lexeme::Type::OpBraceOpen);
-		while (true)
+		else
 		{
-			switch (m_Lexeme.GetType())
+			// Switch body was specified.
+			m_ScopedIdents.emplace_back();
+			ReadNextLexeme(Lexeme::Type::OpBraceOpen);
+			while (true)
 			{
-				// *************************************************************** //
-				case Lexeme::Type::OpBraceClose:
-					ReadNextLexeme();
-					goto Outer;
-
-				//! @todo Awful. Rewrite.
-				// *************************************************************** //
-				case Lexeme::Type::KwCase:
+				// Parsing the group of case & default sections:
+				std__shared_ptr<Ast::SwitchSection> const switchSection(m_Profile->CreateSwitchSection());
+				while (true)
+				{
+					if (m_Lexeme == Lexeme::Type::KwCase)
 					{
-						auto const switchCase = m_Profile->CreateSwitchCase();
 						ReadNextLexeme();
-						auto const caseExpr = Parse_Expression();
-						VerifyTypeIntegral(caseExpr->GetType());
-						VerifyConstexpr(caseExpr);
-						auto const caseExprValue = caseExpr->Evaluate().To<int64_t>();
-						if (switchStmt->m_Cases.count(caseExprValue) != 0)
-						{
-							throw ParserException("Duplicate 'case' in switch statement.");
-						}
-						switchStmt->m_Cases[caseExprValue].reset(switchCase);
+						auto const switchCaseExpr = Parse_Expression();
+						VerifyTypeIntegral(switchCaseExpr->GetType());
+						VerifyConstexpr(switchCaseExpr);
 						ReadNextLexeme(Lexeme::Type::OpColon);
-						
-						while (true)
-						{
-							auto const switchCaseStmt = Parse_Statement();
-							if (switchCaseStmt != nullptr)
-							{
-								switchCase->m_Stmts.emplace_back(switchCaseStmt);
-								if (dynamic_cast<Ast::JumpStatement*>(switchCaseStmt) != nullptr)
-								{
-									// This is a jump statement that leaves outside the loop.
-									break;
-								}
-							}
-						}
-					}
-					break;
 
-				//! @todo Awful. Rewrite.
-				// *************************************************************** //
-				case Lexeme::Type::KwDefault:
+						auto const switchCaseExprValue = switchCaseExpr->Evaluate().To<int64_t>();
+						if (switchStmt->m_Sections.count(switchCaseExprValue) != 0)
+						{
+							throw ParserException("Duplicate 'case' branch of the switch statement.");
+						}
+						switchStmt->m_Sections[switchCaseExprValue] = switchSection;
+						continue;
+					}
+					if (m_Lexeme == Lexeme::Type::KwDefault)
 					{
-						auto const switchCase = m_Profile->CreateSwitchDefaultCase();
-						if (switchStmt->m_DfltCase == nullptr)
+						ReadNextLexeme();
+						ReadNextLexeme(Lexeme::Type::OpColon);
+						if (switchStmt->m_DefaultSection != nullptr)
 						{
 							throw ParserException("Duplicate 'default' branch of the 'switch' statement.");
 						}
-						switchStmt->m_DfltCase.reset(switchCase);
-						ReadNextLexeme(Lexeme::Type::OpColon);
-
-						while (true)
-						{
-							auto const switchCaseStmt = Parse_Statement();
-							if (switchCaseStmt != nullptr)
-							{
-								switchCase->m_Stmts.emplace_back(switchCaseStmt);
-								if (dynamic_cast<Ast::JumpStatement*>(switchCaseStmt) != nullptr)
-								{
-									// This is a jump statement that leaves outside the loop.
-									break;
-								}
-							}
-						}
+						switchStmt->m_DefaultSection = switchSection;
+						continue;
 					}
 					break;
+				}
 
-				// *************************************************************** //
-				default:
-					throw ParserException("Unexpected token inside the body of condition statement.");
+				// Parsing the statements of the branch.
+				auto parsingUnreachableCode = false;
+				while (true)
+				{
+					auto const switchSectionStmt = Parse_Statement();
+					if (parsingUnreachableCode)
+					{
+						/// @todo Uncomment warning.
+					//	throw ParserException("Unreachable code detected.");
+						delete switchSectionStmt;
+						continue;
+					}
+
+					if (switchSectionStmt != nullptr)
+					{
+						switchStmt->m_PerformsJump &= switchSectionStmt->m_PerformsJump;
+						if (switchSectionStmt->m_PerformsJump)
+						{
+							// This is jump statement. That means that any other following statements  
+							// of the scope are unreachable.
+							parsingUnreachableCode = true;
+						}
+					}
+					if (m_Lexeme == Lexeme::Type::KwCase || m_Lexeme == Lexeme::Type::KwDefault ||
+						m_Lexeme == Lexeme::Type::OpBraceClose)
+					{
+						// We are leaving this section now. Have to validate whether sections have no
+						// fallthrough.
+						switchSection->m_Stmts.emplace_back(switchSectionStmt);
+
+						// According to HLSL specification, each section must end with a jump statement.
+						// (Sections with null statements are treated as non-empty.)
+						if (switchSection->m_Stmts.empty() ||
+							!switchSection->m_Stmts.back()->m_PerformsJump.PerformsBreak() &&
+							!switchSection->m_Stmts.back()->m_PerformsJump.PerformsReturn())
+						{
+							throw ParserException("Non-empty section of 'switch' statements must end with "
+									              "'break' or 'return' statement.");
+						}
+						if (m_Lexeme == Lexeme::Type::OpBraceClose)
+						{
+							goto SwitchBodyParsed;
+						}
+						goto SwitchSectionParsed;
+					}
+				}
+			SwitchSectionParsed:;
 			}
+		SwitchBodyParsed:;
+			m_ScopedIdents.pop_back();
 		}
-	Outer:
-		if (switchStmt->m_DfltCase == nullptr && switchStmt->m_Cases.empty())
+		if (switchStmt->m_DefaultSection == nullptr && switchStmt->m_Sections.empty())
 		{
 			/// @todo Uncomment warning.
-		//	throw ParserException("'switch' statement has no case label, not 'default'.");
+		//	throw ParserException("'switch' statement has no 'case' label, nor 'default'.");
 		}
 
-		// Step 2. Try to unroll.
-		if (switchStmt->m_SwitchExpr->IsConstexpr())
+		// All break statements inside switch statement just break
+		// a switch, not an outer statement.
+		switchStmt->m_PerformsJump.PerformBreak(false);
+
+		// Step 2. Try to evaluate.
+		// ---------------------------------------------------
+		if (switchStmt->m_SelectionExpr->IsConstexpr())
 		{
 			// 'switch' statement could be evaluated at compile-time.
-			auto const switchExprValue = switchStmt->m_SwitchExpr->Evaluate().To<int64_t>();
-			auto const evaluatedCase = switchStmt->m_Cases.count(switchExprValue != 0) 
-				? switchStmt->m_Cases[switchExprValue] : switchStmt->m_DfltCase;
-			if (evaluatedCase == nullptr || evaluatedCase->m_Stmts.empty())
+			auto const selectionExprVal = switchStmt->m_SelectionExpr->Evaluate().To<int64_t>();
+			auto const evaluatedSection = switchStmt->m_Sections.count(selectionExprVal) != 0 ? switchStmt->m_Sections[selectionExprVal] : switchStmt->m_DefaultSection;
+			if (evaluatedSection == nullptr || evaluatedSection->m_Stmts.empty())
 			{
 				/// @todo Uncomment warning.
 			//	throw ParserException("'switch' statement has a constant expression condition, evaluation resulted "
@@ -404,9 +433,12 @@ namespace Cr
 				return nullptr;
 			}
 			delete switchStmt;
-			if (evaluatedCase->m_Stmts.size() == 1)
+
+			CrAssert(0);
+			/// @todo We have to remove last break here from the evaluated section, but not something we are doing here.
+			if (evaluatedSection->m_Stmts.size() == 1)
 			{
-				auto const evaluatedStmt = evaluatedCase->m_Stmts[0].release();
+				auto const evaluatedStmt = evaluatedSection->m_Stmts[0].release();
 				if (dynamic_cast<Ast::BreakJumpStatement*>(evaluatedStmt) != nullptr)
 				{
 					// Evaluated case consists only of 'break' statement that leaves the switch.
@@ -414,13 +446,14 @@ namespace Cr
 					delete evaluatedStmt;
 					return nullptr;
 				}
+
 				// Evaluated case consists only of some jump statement.
 				return evaluatedStmt;
 			}
 			else
 			{
 				// Copying the whole content to the break operator.
-				auto const evaluatedStmt = m_Profile->CreateCompoundStatement(std::move(evaluatedCase->m_Stmts));
+				auto const evaluatedStmt = m_Profile->CreateCompoundStatement(std::move(evaluatedSection->m_Stmts));
 				if (dynamic_cast<Ast::BreakJumpStatement*>(evaluatedStmt->m_Stmts.back().get()) != nullptr)
 				{
 					// Evaluated case ends with 'break' statement that leaves the switch.
@@ -430,8 +463,6 @@ namespace Cr
 				return evaluatedStmt;
 			}
 		}
-
-		m_JumpOnBreak = oldJumpOnBreak;
 		return switchStmt;
 	}
 
@@ -444,9 +475,10 @@ namespace Cr
 	CR_INTERNAL Ast::Statement* Parser::Parse_Statement_Iteration_While()
 	{
 		// Step 1. Parse statement.
+		// ---------------------------------------------------
 		auto const whileStmt = m_Profile->CreateWhileIterationStatement();
-		auto const oldJumpOnBreak = m_JumpOnBreak, oldJumpOnContinue = m_JumpOnContinue;
-		m_JumpOnBreak = m_JumpOnContinue = whileStmt;
+		CrAssignAndReset(m_JumpOnBreak, whileStmt);
+		CrAssignAndReset(m_JumpOnContinue, whileStmt);
 
 		ReadNextLexeme(Lexeme::Type::OpParenOpen);
 		whileStmt->m_CondExpr.reset(Parse_Expression());
@@ -459,7 +491,8 @@ namespace Cr
 
 		whileStmt->m_LoopStmt.reset(Parse_Statement_Scoped());
 
-		// Step 2. Try to unroll.
+		// Step 2. Try to evaluate.
+		// ---------------------------------------------------
 		if (whileStmt->m_CondExpr->IsConstexpr())
 		{
 			// 'while' statement could be evaluated at compile-time.
@@ -477,8 +510,6 @@ namespace Cr
 			// We need to determine, whether this loop is finite.
 			/// @todo Check whether this loop is finite.
 		}
-
-		m_JumpOnBreak = oldJumpOnBreak, m_JumpOnContinue = oldJumpOnContinue;
 		return whileStmt;
 	}
 
@@ -487,9 +518,10 @@ namespace Cr
 	CR_INTERNAL Ast::Statement* Parser::Parse_Statement_Iteration_Do()
 	{
 		// Step 1. Parse statement.
+		// ---------------------------------------------------
 		auto const doWhileStmt = m_Profile->CreateDoIterationStatement();
-		auto const oldJumpOnBreak = m_JumpOnBreak, oldJumpOnContinue = m_JumpOnContinue;
-		m_JumpOnBreak = m_JumpOnContinue = oldJumpOnBreak;
+		CrAssignAndReset(m_JumpOnBreak, doWhileStmt);
+		CrAssignAndReset(m_JumpOnContinue, doWhileStmt);
 
 		doWhileStmt->m_LoopStmt.reset(Parse_Statement_Scoped());
 		if (doWhileStmt->m_LoopStmt == nullptr)
@@ -511,6 +543,7 @@ namespace Cr
 		ReadNextLexeme(Lexeme::Type::OpSemicolon);
 
 		// Step 2. Try to unroll.
+		// ---------------------------------------------------
 		if (doWhileStmt->m_CondExpr->IsConstexpr())
 		{
 			// 'do-while' statement could be evaluated at compile-time.
@@ -518,8 +551,8 @@ namespace Cr
 			if (!condExprValue)
 			{
 				/// @todo Uncomment warning.
-				//	throw ParserException("'do-while' statement has a constant expression condition, evaluation resulted "
-				//						  "null statement, unrolling the 'do-while' statement.");
+			//	throw ParserException("'do-while' statement has a constant expression condition, evaluation resulted "
+			//						  "null statement, unrolling the 'do-while' statement.");
 				auto const evaluatedStmt = doWhileStmt->m_LoopStmt.release();
 				delete doWhileStmt;
 				return evaluatedStmt;
@@ -529,8 +562,6 @@ namespace Cr
 			// We need to determine, whether this loop is finite.
 			/// @todo Check whether this loop is finite.
 		}
-
-		m_JumpOnBreak = oldJumpOnBreak, m_JumpOnContinue = oldJumpOnContinue;
 		return doWhileStmt;
 	}
 
@@ -540,9 +571,10 @@ namespace Cr
 	CR_INTERNAL Ast::Statement* Parser::Parse_Statement_Iteration_For()
 	{
 		// Step 1. Parse statement.
+		// ---------------------------------------------------
 		auto const forStmt = m_Profile->CreateForIterationStatement();
-		auto const oldJumpOnBreak = m_JumpOnBreak, oldJumpOnContinue = m_JumpOnContinue;
-		m_JumpOnBreak = m_JumpOnContinue = oldJumpOnBreak;
+		CrAssignAndReset(m_JumpOnBreak, forStmt);
+		CrAssignAndReset(m_JumpOnContinue, forStmt);
 
 		ReadNextLexeme(Lexeme::Type::OpParenOpen);
 		if (m_Lexeme != Lexeme::Type::OpSemicolon)
@@ -591,6 +623,7 @@ namespace Cr
 		forStmt->m_LoopStmt.reset(Parse_Statement_Scoped());
 		
 		// Step 2. Try to unroll.
+		// ---------------------------------------------------
 		if (forStmt->m_CondExpr != nullptr && forStmt->m_CondExpr->IsConstexpr())
 		{
 			// 'for' statement contains condition expression section
@@ -616,7 +649,6 @@ namespace Cr
 			// We need to determine, whether this loop is finite.
 			/// @todo Check whether this loop is finite.
 		}
-		m_JumpOnBreak = oldJumpOnBreak, m_JumpOnContinue = oldJumpOnContinue;
 		return forStmt;
 	}
 	
@@ -628,6 +660,8 @@ namespace Cr
 	// *************************************************************** //
 	CR_INTERNAL Ast::Statement* Parser::Parse_Statement_Jump_Break()
 	{
+		// Step 1. Parse statement.
+		// ---------------------------------------------------
 		auto const breakStmt = m_Profile->CreateBreakJumpStatement();
 		if (m_JumpOnBreak == nullptr)
 		{
@@ -635,6 +669,7 @@ namespace Cr
 					              "a 'switch'.");
 		}
 		breakStmt->m_BreakTo = m_JumpOnBreak;
+		breakStmt->m_PerformsJump.PerformBreak();
 		ReadNextLexeme(Lexeme::Type::OpSemicolon);
 		return breakStmt;
 	}
@@ -643,12 +678,15 @@ namespace Cr
 	// *************************************************************** //
 	CR_INTERNAL Ast::Statement* Parser::Parse_Statement_Jump_Continue()
 	{
+		// Step 1. Parse statement.
+		// ---------------------------------------------------
 		auto const continueStmt = m_Profile->CreateContinueJumpStatement();
 		if (m_JumpOnContinue == nullptr)
 		{
 			throw ParserException("Using 'continue' statement is allowed only inside of the iteration statements.");
 		}
 		continueStmt->m_ContinueWith = m_JumpOnContinue;
+		continueStmt->m_PerformsJump.PerformContinue();
 		ReadNextLexeme(Lexeme::Type::OpSemicolon);
 		return continueStmt;
 	}
@@ -657,8 +695,11 @@ namespace Cr
 	// *************************************************************** //
 	CR_INTERNAL Ast::Statement* Parser::Parse_Statement_Jump_Return()
 	{
+		// Step 1. Parse statement.
+		// ---------------------------------------------------
 		auto const returnStmt = m_Profile->CreateReturnJumpStatement();
 		returnStmt->m_ReturnTo = m_Function;
+		returnStmt->m_PerformsJump.PerformReturn();
 
 		auto const funcRetType = returnStmt->m_ReturnTo->GetReturnType();
 		if (m_Lexeme != Lexeme::Type::OpSemicolon)
@@ -690,8 +731,11 @@ namespace Cr
 	// *************************************************************** //
 	CR_INTERNAL Ast::Statement* Parser::Parse_Statement_Jump_Discard()
 	{
+		// Step 1. Parse statement.
+		// ---------------------------------------------------
 		auto const discardStmt = m_Profile->CreateDiscardJumpStatement();
 		ReadNextLexeme(Lexeme::Type::OpSemicolon);
+		discardStmt->m_PerformsJump.PerformDiscard();
 		return discardStmt;
 	}
 	
@@ -699,97 +743,203 @@ namespace Cr
 	// --        Declaration & Expression statement parsing.        -- //
 	// --------------------------------------------------------------- //
 
+	// { TYPE ::= boolMxN | ... | doubleMxN |  } 
+	// *************************************************************** //
+	CR_HELPER Ast::Type Parser::ParseHelper_Type()
+	{
+		switch (m_Lexeme.GetType())
+		{
+			// Scalar, vector or matrix types.
+			// ---------------------------------------------------
+#define CrCaseParseTypeMxN(type) \
+			case CrCaseTypeMxN(Lexeme::Type::Kw##type): \
+				switch (m_Lexeme.GetType()) \
+				{ \
+					case Lexeme::Type::Kw##type: \
+					case Lexeme::Type::Kw##type##1: \
+					case Lexeme::Type::Kw##type##1x1: ReadNextLexeme(); return Ast::Type(Ast::BaseType::type); \
+					case Lexeme::Type::Kw##type##1x2: ReadNextLexeme(); return Ast::Type(Ast::BaseType::type, 1, 2); \
+					case Lexeme::Type::Kw##type##1x3: ReadNextLexeme(); return Ast::Type(Ast::BaseType::type, 1, 3); \
+					case Lexeme::Type::Kw##type##1x4: ReadNextLexeme(); return Ast::Type(Ast::BaseType::type, 1, 4); \
+					case Lexeme::Type::Kw##type##2: \
+					case Lexeme::Type::Kw##type##2x1: ReadNextLexeme(); return Ast::Type(Ast::BaseType::type, 2, 1); \
+					case Lexeme::Type::Kw##type##2x2: ReadNextLexeme(); return Ast::Type(Ast::BaseType::type, 2, 2); \
+					case Lexeme::Type::Kw##type##2x3: ReadNextLexeme(); return Ast::Type(Ast::BaseType::type, 2, 3); \
+					case Lexeme::Type::Kw##type##2x4: ReadNextLexeme(); return Ast::Type(Ast::BaseType::type, 2, 4); \
+					case Lexeme::Type::Kw##type##3: \
+					case Lexeme::Type::Kw##type##3x1: ReadNextLexeme(); return Ast::Type(Ast::BaseType::type, 3, 1); \
+					case Lexeme::Type::Kw##type##3x2: ReadNextLexeme(); return Ast::Type(Ast::BaseType::type, 3, 2); \
+					case Lexeme::Type::Kw##type##3x3: ReadNextLexeme(); return Ast::Type(Ast::BaseType::type, 3, 3); \
+					case Lexeme::Type::Kw##type##3x4: ReadNextLexeme(); return Ast::Type(Ast::BaseType::type, 3, 4); \
+					case Lexeme::Type::Kw##type##4: \
+					case Lexeme::Type::Kw##type##4x1: ReadNextLexeme(); return Ast::Type(Ast::BaseType::type, 4, 1); \
+					case Lexeme::Type::Kw##type##4x2: ReadNextLexeme(); return Ast::Type(Ast::BaseType::type, 4, 2); \
+					case Lexeme::Type::Kw##type##4x3: ReadNextLexeme(); return Ast::Type(Ast::BaseType::type, 4, 3); \
+					case Lexeme::Type::Kw##type##4x4: ReadNextLexeme(); return Ast::Type(Ast::BaseType::type, 4, 3); \
+					\
+					default: \
+						CrAssert(0); \
+						return Ast::Type(); \
+				} 
+			case Lexeme::Type::KwVoid:
+				ReadNextLexeme();
+				return Ast::Type(Ast::BaseType::Void, 1, 1);
+			CrCaseParseTypeMxN(Bool);
+			CrCaseParseTypeMxN(Int);
+			CrCaseParseTypeMxN(UInt);
+			CrCaseParseTypeMxN(Dword);
+			CrCaseParseTypeMxN(Float);
+			CrCaseParseTypeMxN(Double);
+#undef CrCaseParseTypeMxN
+
+			// Sampler and texture types.
+			// ---------------------------------------------------
+#define CrCaseParseTypeND(type) \
+			case CrCaseTypeND(Lexeme::Type::Kw##type): \
+				switch (m_Lexeme.GetType()) \
+				{ \
+					case Lexeme::Type::Kw##type##1D: ReadNextLexeme(); return Ast::Type(Ast::BaseType::type##1D); \
+					case Lexeme::Type::Kw##type##2D: ReadNextLexeme(); return Ast::Type(Ast::BaseType::type##2D); \
+					case Lexeme::Type::Kw##type##3D: ReadNextLexeme(); return Ast::Type(Ast::BaseType::type##3D); \
+					case Lexeme::Type::Kw##type##CUBE: ReadNextLexeme(); return Ast::Type(Ast::BaseType::type##CUBE); \
+					\
+					default: \
+						CrAssert(0); \
+						return Ast::Type(); \
+				} 
+			CrCaseParseTypeND(Sampler);
+			CrCaseParseTypeND(Texture);
+#undef CrCaseParseTypeND
+
+			// Structures and typedefs.
+			// ---------------------------------------------------
+			case Lexeme::Type::KwStruct:
+				CrAssert(0);
+			case Lexeme::Type::IdIdentifier:
+				{
+					auto const typedef_ = dynamic_cast<Ast::Typedef*>(FindIdentifier());
+					if (typedef_ != nullptr)
+					{
+						ReadNextLexeme();
+						return typedef_->m_Type;
+					}
+					return Ast::Type();
+				}
+
+			default:
+				return Ast::Type();
+		}
+	}
+
 	/**
 	 * Parses DECLARATION or EXPRESSION statements.
 	 * { DECLARATION-STMT ::= boolMxN | .. | doubleMxN <identifier> [ ( [<DECLARATION>, ...] ) ] }
 	 */
+	/// @todo Very, very bad. Rewrite.
 	// *************************************************************** //
-	CR_INTERNAL Ast::Statement* Parser::Parse_Statement_Declaration_OR_Expression()
+	CR_INTERNAL Ast::Statement* Parser::Parse_Statement_Declaration_OR_Expression(bool const allowFuncDecl /*= false*/)
 	{
-		switch (m_Lexeme.GetType())
+		if (m_Lexeme == Lexeme::Type::KwStruct)
 		{
-			//! @todo Add DECLARATION or EXPRESSION statements parsing.
-			case CrCaseType(Lexeme::Type::KwBool):
-			case CrCaseType(Lexeme::Type::KwInt):
-			case CrCaseType(Lexeme::Type::KwUInt):
-			case CrCaseType(Lexeme::Type::KwDword):
-			case CrCaseType(Lexeme::Type::KwHalf):
-			case CrCaseType(Lexeme::Type::KwFloat):
-			case CrCaseType(Lexeme::Type::KwDouble):
-				return Parse_Statement_Declaration_Variable_OR_Function();
+			auto const declStmt = new Ast::DeclarationStatement();
 
-			// Or the simplest case: expression statement.
-			default:
-				return Parse_Statement_Expression();
+			ReadNextLexeme();
+			ExpectLexeme(Lexeme::Type::IdIdentifier);
+			auto const structName = m_Lexeme.GetValueID();
+			if (FindIdentifier(structName) != nullptr)
+			{
+				throw ParserException("Identifier redeclaration.");
+			}
+			ReadNextLexeme();
+
+			auto const structDecl = new Ast::Structure();
+			structDecl->m_Name = structName;
+			ReadNextLexeme(Lexeme::Type::OpBraceOpen);
+			m_ScopedIdents.emplace_back();
+			while (m_Lexeme != Lexeme::Type::OpBraceClose)
+			{
+				auto const declStmt = dynamic_cast<Ast::DeclarationStatement*>(Parse_Statement_Declaration_OR_Expression());
+				if (declStmt == nullptr)
+				{
+					throw ParserException("Declaration expected.");
+				}
+				structDecl->m_Vars.insert(structDecl->m_Vars.end(), declStmt->m_Vars.begin(), declStmt->m_Vars.end());
+				delete declStmt;
+			}
+			ReadNextLexeme();
+			ReadNextLexeme(Lexeme::Type::OpSemicolon);
+			m_ScopedIdents.pop_back();
+			//	m_ScopedIdents.emplace_back(structDecl);
+
+			auto const typedefDecl = new Ast::Typedef();
+			typedefDecl->m_Type = Ast::Type(structDecl);
+			m_ScopedIdents.back()[structDecl->m_Name] = typedefDecl;
+
+			declStmt->m_Structs.emplace_back(structDecl);
+			return declStmt;
 		}
+
+		/// @todo Add storage class parsing.
+		auto const type = ParseHelper_Type();
+		if (type != Ast::BaseType::Null)
+		{
+			auto const declStmt = new Ast::DeclarationStatement();
+
+			ExpectLexeme(Lexeme::Type::IdIdentifier);
+			auto const varFuncName = m_Lexeme.GetValueID();
+			if (FindIdentifier(varFuncName) != nullptr)
+			{
+				throw ParserException("Identifier redeclaration.");
+			}
+			ReadNextLexeme();
+
+			if (m_Lexeme == Lexeme::Type::OpParenOpen)
+			{
+				// This is a function declaration.
+				CrAssert(0);
+			}
+
+			// This is a variable declaration.
+			auto const varDecl = new Ast::Variable();
+			declStmt->m_Vars.emplace_back(varDecl);
+			varDecl->m_Type = type;
+			varDecl->m_Name = varFuncName;
+			DeclareVariable(varDecl);
+
+			//if (m_Lexeme == Lexeme::Type::OpBracketOpen)
+			//{
+			//	// This declaration is array.
+			//	ReadNextLexeme();
+			//	auto const arrySizeExpr = ...
+			//}
+
+			if (m_Lexeme == Lexeme::Type::OpColon)
+			{
+				// This declaration has semantic.
+				ReadNextLexeme();
+				ExpectLexeme(Lexeme::Type::IdIdentifier);
+				varDecl->m_Semantic = m_Lexeme.GetValueID();
+				ReadNextLexeme();
+			}
+
+			if (m_Lexeme == Lexeme::Type::OpAssignment)
+			{
+				// This declaration has initialization expression.
+				ReadNextLexeme();
+				varDecl->m_InitExpr.reset(Parse_Expression());
+				VerifyTypesMatch(type, varDecl->m_InitExpr->GetType());
+			}
+
+			ReadNextLexeme(Lexeme::Type::OpSemicolon);
+			return declStmt;
+		}
+		return Parse_Statement_Expression();
 	}
 	
-	/**
-	 * Parses variable or function DECLARATION statements.
-	 * { DECLARATION-STMT ::= TypeMxN <identifier> ; }
-	 */
+	// { DECL-EXPR-STMT ::= @<TYPE> DECLARATION-STMT | EXPRESSION-STMT }
 	// *************************************************************** //
-	CR_INTERNAL Ast::Statement* Parser::Parse_Statement_Declaration_Variable_OR_Function()
+	CR_INTERNAL Ast::Statement* Parser::Parse_Statement_Declaration_Variable_OR_Function(Ast::Type const& type, bool const /*allowFuncDecl = false*/)
 	{
-		auto const declStmt = new Ast::DeclarationStatement();
-		
-		auto const varDecl = new Ast::Variable();
-		declStmt->m_Vars.emplace_back(varDecl);
-
-		switch (m_Lexeme.GetType())
-		{
-			//! @todo Add correct variables parsing.
-			case CrCaseType(Lexeme::Type::KwBool):
-				varDecl->m_Type = Ast::Type(Ast::BaseType::Bool);
-				break;
-			case CrCaseType(Lexeme::Type::KwInt):
-				varDecl->m_Type = Ast::Type(Ast::BaseType::Int);
-				break;
-			case CrCaseType(Lexeme::Type::KwUInt):
-				varDecl->m_Type = Ast::Type(Ast::BaseType::UInt);
-			case CrCaseType(Lexeme::Type::KwDword):
-				varDecl->m_Type = Ast::Type(Ast::BaseType::Dword);
-				break;
-			case CrCaseType(Lexeme::Type::KwHalf):
-				varDecl->m_Type = Ast::Type(Ast::BaseType::Half);
-				break;
-		//	case CrCaseType(Lexeme::Type::KwFloat):
-		//		varDecl->m_Type = Ast::Type(Ast::BaseType::Float);
-		//		break;
-			case Lexeme::Type::KwFloat:
-				varDecl->m_Type = Ast::Type(Ast::BaseType::Float);
-				break;
-			case Lexeme::Type::KwFloat4:
-				varDecl->m_Type = Ast::Type(Ast::BaseType::Float, 4, 1);
-				break;
-			case CrCaseType(Lexeme::Type::KwDouble):
-				varDecl->m_Type = Ast::Type(Ast::BaseType::Double);
-				break;
-
-			default:
-				CrAssert(0);
-		}
-		ReadNextLexeme();
-
-		ExpectLexeme(Lexeme::Type::IdIdentifier);
-		varDecl->m_Name = m_Lexeme.GetValueID();
-		ReadNextLexeme();
-		ReadNextLexeme(Lexeme::Type::OpSemicolon);
-
-		DeclareVariable(varDecl);
-		return declStmt;
-	}
-
-	// *************************************************************** //
-	CR_INTERNAL Ast::Statement* Parser::Parse_Statement_Declaration_Typedef()
-	{
-		CrAssert(0);
-		return nullptr;
-	}
-	// *************************************************************** //
-	CR_INTERNAL Ast::Statement* Parser::Parse_Statement_Declaration_Struct()
-	{
-		CrAssert(0);
 		return nullptr;
 	}
 
@@ -797,24 +947,40 @@ namespace Cr
 	// **                    Expressions parsing.                   ** //
 	// *************************************************************** //
 
+#pragma region
+
 	// { EXPRESSION-STMT ::= <expression>; }
 	// *************************************************************** //
 	CR_INTERNAL Ast::Statement* Parser::Parse_Statement_Expression()
 	{
+		// Step 1. Parse statement.
+		// ---------------------------------------------------
+		auto const expr = Parse_Expression();
+		
+		// Step 2. Try to unroll.
+		// ---------------------------------------------------
+		if (expr->IsConstexpr())
+		{
+			/// @todo Uncomment warning.
+		//	throw ParserException("Compile-time constant expression statement, skipping it.");
+			delete expr;
+			return nullptr;
+		}
+		
 		auto const exprStmt = m_Profile->CreateExpressionStatement();
-		exprStmt->m_Expr.reset(Parse_Expression());
+		exprStmt->m_Expr.reset();
 		ReadNextLexeme(Lexeme::Type::OpSemicolon);
 		return exprStmt;
 	}
 
-	// { expression ::= COMMA-SEPARATED-EXPR }
+	// { expression ::= <COMMA-SEPARATED-EXPR> }
 	// *************************************************************** //
 	CR_INTERNAL Ast::Expression* Parser::Parse_Expression()
 	{
 		return Parse_Expression_Comma();
 	}
 
-	// { COMMA-SEPARATED-EXPR ::= ASSIGNMENT-EXPR [, ASSIGNMENT-EXPR] }
+	// { COMMA-SEPARATED-EXPR ::= <ASSIGNMENT-EXPR> [, <ASSIGNMENT-EXPR>] }
 	// *************************************************************** //
 	CR_INTERNAL Ast::Expression* Parser::Parse_Expression_Comma()
 	{
@@ -832,7 +998,7 @@ namespace Cr
 		return expr;
 	}
 
-	// { ASSIGNMENT-EXPR ::= TERNARY-EXPR [@= TERNARY-EXPR] }
+	// { ASSIGNMENT-EXPR ::= <TERNARY-EXPR> [@= <TERNARY-EXPR>] }
 	// *************************************************************** //
 	CR_INTERNAL Ast::Expression* Parser::Parse_Expression_Assignments()
 	{
@@ -873,6 +1039,7 @@ namespace Cr
 						auto const rhsExprType = bitwiseAssignExpr->m_Rhs->GetType();
 						VerifyTypesMatch(lhsExprType, rhsExprType);
 						VerifyTypesIntegral(lhsExprType, rhsExprType);
+						VerifyTypesArithmetic(lhsExprType, rhsExprType);
 
 						bitwiseAssignExpr->m_Type = lhsExprType;
 						bitwiseAssignExpr->m_IsLValue = true;
@@ -893,6 +1060,7 @@ namespace Cr
 						auto const lhsExprType = arithmAssignExpr->m_Lhs->GetType();
 						auto const rhsExprType = arithmAssignExpr->m_Rhs->GetType();
 						VerifyTypesMatch(lhsExprType, rhsExprType);
+						VerifyTypesArithmetic(lhsExprType, rhsExprType);
 						if (op == Lexeme::Type::OpModuloAssign)
 						{
 							// '%' operator requires integral operands.
@@ -968,6 +1136,7 @@ namespace Cr
 		auto const lhsExprType = logicBinExpr->m_Lhs->GetType();
 		auto const rhsExprType = logicBinExpr->m_Rhs->GetType();
 		VerifyTypesMatch(lhsExprType, rhsExprType);
+		VerifyTypesArithmetic(lhsExprType, rhsExprType);
 
 		logicBinExpr->m_IsConstexpr = logicBinExpr->m_Lhs->IsConstexpr() && logicBinExpr->m_Rhs->IsConstexpr();
 		logicBinExpr->m_Type = Ast::Type(Ast::BaseType::Bool, lhsExprType);
@@ -984,6 +1153,7 @@ namespace Cr
 		auto const rhsExprType = bitwiseBinExpr->m_Rhs->GetType();
 		VerifyTypesMatch(lhsExprType, rhsExprType);
 		VerifyTypesIntegral(lhsExprType, rhsExprType);
+		VerifyTypesArithmetic(lhsExprType, rhsExprType);
 
 		bitwiseBinExpr->m_IsConstexpr = bitwiseBinExpr->m_Lhs->IsConstexpr() && bitwiseBinExpr->m_Rhs->IsConstexpr();
 		bitwiseBinExpr->m_Type = std::max(lhsExprType, rhsExprType);
@@ -999,6 +1169,7 @@ namespace Cr
 		auto const lhsExprType = arithmBinExpr->m_Lhs->GetType();
 		auto const rhsExprType = arithmBinExpr->m_Rhs->GetType();
 		VerifyTypesMatch(lhsExprType, rhsExprType);
+		VerifyTypesArithmetic(lhsExprType, rhsExprType);
 		if (op == Lexeme::Type::OpModulo)
 		{
 			// '%' operator requires integral operands.
@@ -1011,7 +1182,7 @@ namespace Cr
 		return arithmBinExpr;
 	}
 
-	// { BINARY-EXPR ::= UNARY-EXPR [@ UNARY-EXPR] }
+	// { BINARY-EXPR ::= <PREF-UNARY-EXPR> [@ <PREF-UNARY-EXPR>] }
 	// *************************************************************** //
 	CR_INTERNAL Ast::Expression* Parser::Parse_Expression_Or()
 	{
@@ -1119,12 +1290,12 @@ namespace Cr
 	// *************************************************************** //
 	CR_INTERNAL Ast::Expression* Parser::Parse_Expression_Multiply_OR_Divide_OR_Modulo()
 	{
-		auto expr = Parse_Expression_Unary();
+		auto expr = Parse_Expression_PrefixUnary();
 		while (m_Lexeme == Lexeme::Type::OpMultiply || m_Lexeme == Lexeme::Type::OpDivide || m_Lexeme == Lexeme::Type::OpModulo)
 		{
 			auto const op = m_Lexeme.GetType();
 			ReadNextLexeme();
-			expr = ParseHelper_Expression_ArithmeticBinary(op, expr, Parse_Expression_Unary());
+			expr = ParseHelper_Expression_ArithmeticBinary(op, expr, Parse_Expression_PrefixUnary());
 		}
 		return expr;
 	}
@@ -1133,8 +1304,9 @@ namespace Cr
 	// --                  Unary expression parsing.                -- //
 	// --------------------------------------------------------------- //
 
-	// { UNARY-EXPR ::=  [@ UNARY-EXPR] }
-	/// @todo Split everything into several functions.
+	// { PREF-UNARY-EXPR ::= <UNARY-OP-EXPR> 
+	//					   | <PAREN-OR-CAST-EXPR> 
+	//					   | <OPERAND-EXPR> }
 	// *************************************************************** //
 	CR_INTERNAL Ast::Expression* Parser::Parse_Expression_PrefixUnary()
 	{
@@ -1145,46 +1317,22 @@ namespace Cr
 			// Arithmetic unary operations.
 			// *************************************************************** //
 			case Lexeme::Type::OpAdd:
-				{
-					// Unary '+' operator does nothing. Just skipping it.
-					ReadNextLexeme();
-					auto const expr = Parse_Expression_PrefixUnary();
-					return expr;
-				}
+				return Parse_Expression_PrefixUnary_Plus();
 			case Lexeme::Type::OpSubtract:
-				{
-					ReadNextLexeme();
-					auto const negExpr = m_Profile->CreateNegateExpression(Parse_Expression_PrefixUnary());
-					negExpr->m_Type = negExpr->m_Expr->GetType();
-					negExpr->m_IsConstexpr = negExpr->m_Expr->IsConstexpr();
-					return negExpr;
-				}
+				return Parse_Expression_PrefixUnary_Negate();
 
 			// Logic and bitwise unary operations.
 			// *************************************************************** //
 			case Lexeme::Type::OpNot:
-				{
-					ReadNextLexeme();
-					auto const notExpr = m_Profile->CreateNotExpression(Parse_Expression_PrefixUnary());
-					notExpr->m_Type = Ast::Type(Ast::BaseType::Bool, notExpr->m_Expr->GetType());
-					notExpr->m_IsConstexpr = notExpr->m_Expr->IsConstexpr();
-					return notExpr;
-				}
+				return Parse_Expression_PrefixUnary_Not();
 			case Lexeme::Type::OpBitwiseNot:
-				{
-					ReadNextLexeme();
-					auto const bitwiseNotExpr = m_Profile->CreateBitwiseNotExpression(Parse_Expression_PrefixUnary());
-					bitwiseNotExpr->m_Type = bitwiseNotExpr->m_Expr->GetType();
-					bitwiseNotExpr->m_IsConstexpr = bitwiseNotExpr->m_Expr->IsConstexpr();
-					VerifyTypeIntegral(bitwiseNotExpr->m_Expr->GetType());
-					return bitwiseNotExpr;
-				}
+				return Parse_Expression_PrefixUnary_BitwiseNot();
 
 			// Increment and decrement.
+			/// @todo Implement (inc)decrementing.
 			// *************************************************************** //
 			case Lexeme::Type::OpInc:
 			case Lexeme::Type::OpDec:
-				/// @todo Implement (dec)incrementing.
 				CrAssert(0);
 				ReadNextLexeme();
 				return nullptr;
@@ -1192,30 +1340,88 @@ namespace Cr
 			// Parentheses or cast operations.
 			// *************************************************************** //
 			case Lexeme::Type::OpParenOpen:
-			{
-				ReadNextLexeme();
-				//switch (m_Lexeme.GetType())
-				//{
-				//	//! @todo Add cast operation support.
-				//	case CrCaseType(Lexeme::Type::KwBool):
-				//	case CrCaseType(Lexeme::Type::KwInt):
-				//	case CrCaseType(Lexeme::Type::KwUInt):
-				//	case CrCaseType(Lexeme::Type::KwDword):
-				//	case CrCaseType(Lexeme::Type::KwHalf):
-				//	case CrCaseType(Lexeme::Type::KwFloat):
-				//	case CrCaseType(Lexeme::Type::KwDouble):
-				//		CrAssert(0);
-				//		break;
-				//}
+				return Parse_Expression_PrefixUnary_Cast_OR_Paren();
 
-				auto const parenExpr = Parse_Expression();
-				ReadNextLexeme(Lexeme::Type::OpParenClose);
-				return parenExpr;
-			}
+			// Expression operand.
+			// *************************************************************** //
+			default:
+				return Parse_Expression_PrefixUnary_Factor();
+		}
+	}
+	
+	// { UNARY-OP-EXPR ::= @<PREF-UNARY-EXPR> }
+	// *************************************************************** //
+	CR_INTERNAL Ast::Expression* Parser::Parse_Expression_PrefixUnary_Plus()
+	{
+		// Unary '+' operator does nothing. Just skipping it.
+		ReadNextLexeme();
+		auto const expr = Parse_Expression_PrefixUnary();
+		return expr;
+	}
+	// *************************************************************** //
+	CR_INTERNAL Ast::Expression* Parser::Parse_Expression_PrefixUnary_Negate()
+	{
+		ReadNextLexeme();
+		auto const negExpr = m_Profile->CreateNegateExpression(Parse_Expression_PrefixUnary());
+		negExpr->m_Type = negExpr->m_Expr->GetType();
+		negExpr->m_IsConstexpr = negExpr->m_Expr->IsConstexpr();
+		return negExpr;
+	}
+	// *************************************************************** //
+	CR_INTERNAL Ast::Expression* Parser::Parse_Expression_PrefixUnary_Not()
+	{
+		ReadNextLexeme();
+		auto const notExpr = m_Profile->CreateNotExpression(Parse_Expression_PrefixUnary());
+		notExpr->m_Type = Ast::Type(Ast::BaseType::Bool, notExpr->m_Expr->GetType());
+		notExpr->m_IsConstexpr = notExpr->m_Expr->IsConstexpr();
+		return notExpr;
+	}
+	// *************************************************************** //
+	CR_INTERNAL Ast::Expression* Parser::Parse_Expression_PrefixUnary_BitwiseNot()
+	{
+		ReadNextLexeme();
+		auto const bitwiseNotExpr = m_Profile->CreateBitwiseNotExpression(Parse_Expression_PrefixUnary());
+		bitwiseNotExpr->m_Type = bitwiseNotExpr->m_Expr->GetType();
+		bitwiseNotExpr->m_IsConstexpr = bitwiseNotExpr->m_Expr->IsConstexpr();
+		VerifyTypeIntegral(bitwiseNotExpr->m_Expr->GetType());
+		return bitwiseNotExpr;
+	}
 
+	// { <PAREN-OR-CAST-EXPR> ::= (<TYPE>)<expression>
+	//                          | (<expression>)  }
+	// *************************************************************** //
+	CR_INTERNAL Ast::Expression* Parser::Parse_Expression_PrefixUnary_Cast_OR_Paren()
+	{
+		ReadNextLexeme();
+
+		auto const castToType = ParseHelper_Type();
+		if (castToType != Ast::BaseType::Null)
+		{
+			/// @todo Validate types.
+			ReadNextLexeme(Lexeme::Type::OpParenClose);
+			return new Ast::CastExpression(castToType, Parse_Expression());
+		}
+		return Parse_Expression_PrefixUnary_Paren();
+	}
+	// *************************************************************** //
+	CR_INTERNAL Ast::Expression* Parser::Parse_Expression_PrefixUnary_Paren()
+	{
+		auto const parenExpr = Parse_Expression();
+		ReadNextLexeme(Lexeme::Type::OpParenClose);
+		return parenExpr;
+	}
+
+	// { <OPERAND-EXPR> ::= <IDENT>|<CONST>|<TYPE>([<expression>, <expression>...])  }
+	// *************************************************************** //
+	CR_INTERNAL Ast::Expression* Parser::Parse_Expression_PrefixUnary_Operand()
+	{
+		switch (m_Lexeme.GetType())
+		{
+			// Identifier operand: construct, function call or just a variable.
+			// *************************************************************** //
 			case Lexeme::Type::IdIdentifier:
 				{
-					auto const ident = FindIdentifier(m_Lexeme.GetValueID());
+					auto const ident = FindIdentifier();
 					if (ident == nullptr)
 					{
 						throw ParserException("Undeclared identifier.");
@@ -1231,90 +1437,77 @@ namespace Cr
 					ReadNextLexeme();
 					return identExpr;
 				}
-				break;
 
-			// Compile-time constants.
+			// Compile-time constant operand.
+			/// @todo Rewrite this somehow. Don't known how, but rewrite.
 			// *************************************************************** //
 			case Lexeme::Type::KwTrue:
 				ReadNextLexeme();
-				return m_Profile->CreateConstExpression(true);
+				return m_Profile->CreateConstExpression(true, Ast::Type(Ast::BaseType::Bool));
 			case Lexeme::Type::KwFalse:
 				ReadNextLexeme();
-				return m_Profile->CreateConstExpression(false);
+				return m_Profile->CreateConstExpression(false, Ast::Type(Ast::BaseType::Bool));
 			case Lexeme::Type::CtInt:
+			case Lexeme::Type::CtUInt:
 				{
-					auto const constExpr = m_Profile->CreateConstExpression();
-					constExpr->m_Type = Ast::Type(Ast::BaseType::Int);
-					constExpr->m_Value = m_Lexeme.GetValueInt();
-					constExpr->m_IsConstexpr = true;
+					auto const constVal = m_Lexeme.GetValueInt();
+					auto const constExpr = m_Profile->CreateConstExpression(constVal, Ast::Type(static_cast<Ast::BaseType>(m_Lexeme.GetType())));
 					ReadNextLexeme();
 					return constExpr;
 				}
-				//! @todo Add other constant types.
-			/*case Lexeme::Type::CtUInt:
-				ReadNextLexeme();
-				return m_Profile->CreateConstExpression(m_Lexeme.GetValueUInt());
-			case Lexeme::Type::CtHalf:
-				ReadNextLexeme();
-				return m_Profile->CreateConstExpression(m_Lexeme.GetValueHalf());
 			case Lexeme::Type::CtFloat:
-				ReadNextLexeme();
-				return m_Profile->CreateConstExpression(m_Lexeme.GetValueFloat());*/
 			case Lexeme::Type::CtDouble:
 				{
-					auto const constExpr = m_Profile->CreateConstExpression();
-					constExpr->m_Type = Ast::Type(Ast::BaseType::Double);
-					constExpr->m_Value = m_Lexeme.GetValueDouble();
-					constExpr->m_IsConstexpr = true;
+					auto const constVal = m_Lexeme.GetValueReal();
+					auto const constExpr = m_Profile->CreateConstExpression(constVal, Ast::Type(static_cast<Ast::BaseType>(m_Lexeme.GetType())));
 					ReadNextLexeme();
 					return constExpr;
 				}
-
+			
+			// Or something strange.
+			// *************************************************************** //
 			default:
-				throw ParserException("Unexpected lexeme in the stream.");
+				throw ParserException("Unexpected lexeme while parsing expression.");
 		}
 	}
-	/// @todo Split everything into several functions.
 	// *************************************************************** //
-	CR_INTERNAL Ast::Expression* Parser::Parse_Expression_Unary()
+	CR_INTERNAL Ast::Expression* Parser::Parse_Expression_PrefixUnary_Factor()
 	{
-		auto expr = Parse_Expression_PrefixUnary();
-		while (true)
+		auto const operandExpr = Parse_Expression_PrefixUnary_Operand();
+		if (m_Lexeme == Lexeme::Type::OpDot)
 		{
-			switch (m_Lexeme.GetType())
+			ReadNextLexeme();
+			ExpectLexeme(Lexeme::Type::IdIdentifier);
+			auto const operandType = operandExpr->GetType();
+			if (operandType.IsStruct())
 			{
-				// Struct member or swizzling operator
-				// *************************************************************** //
-				case Lexeme::Type::OpDot:
-					{
-						ReadNextLexeme();
+				auto const subscriptExpr = new Ast::SubscriptExpression();
+				subscriptExpr->m_Expr.reset(operandExpr);
+				subscriptExpr->m_Subscript = m_Lexeme.GetValueID();
+				ReadNextLexeme();
 
-						auto const exprType = expr->GetType();
-						if (exprType == Ast::BaseType::Struct)
-						{
-							// Struct member.
-							CrAssert(0);
-						}
+				auto const operandTypeStruct = operandType.m_Struct;
+				auto const substructIter = std::find_if(operandTypeStruct->m_Vars.begin(), operandTypeStruct->m_Vars.end()
+					, [&](auto const& var)
+				{
+					return var->m_Name == subscriptExpr->m_Subscript;
+				});
+				if (substructIter == operandTypeStruct->m_Vars.end())
+				{
+					throw ParserException("Undeclared subscript.");
+				}
 
-						// Swizzling operator.
-						//! @todo Implement swizzling.
-						if (m_Lexeme == Lexeme::Type::IdIdentifier)
-						{
-							CrAssert(0);
-						}
-						else
-						{
-							throw ParserException("swizzle mask expected.");
-						}
-					}
-
-				default:
-					goto Outer;
+				subscriptExpr->m_IsLValue = true;
+				subscriptExpr->m_Type = (*substructIter)->m_Type;
+				return subscriptExpr;
 			}
+			/// @todo Implement swizzling.
+			CrAssert(0);
 		}
-	Outer:
-		return expr;
+		return operandExpr;
 	}
+
+#pragma endregion
 
 	// *************************************************************** //
 	// *************************************************************** //
@@ -1394,10 +1587,15 @@ namespace Cr
 
 	CrUnitTest(ParserEmptyStream)
 	{
-		Parser parser(new Scanner(std::make_shared<IO::StringInputStream>(R"(
+		Parser parser(new Preprocessor(std::make_shared<IO::StringInputStream>(R"(
 program 
 {
-{ float4 a; if(a) {}}
+		struct A { int a; int b; };
+		struct B { int a; int b; };
+
+		A a;
+		B b;
+		a *= (int)a;
 }
 )")));
 		parser.ParseProgram();

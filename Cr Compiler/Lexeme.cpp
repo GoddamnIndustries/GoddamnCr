@@ -19,12 +19,14 @@ namespace Cr
 	std::map<std::string, Lexeme::Type> const Lexeme::s_KeywordsTable = {
 		
 		// Keywords 
-		{ "program", Type::KwProgram },{ "switch", Type::KwSwitch },{ "case", Type::KwCase },{ "default", Type::KwDefault },
-		{ "true",      Type::KwTrue },{ "true",      Type::KwFalse },
-		{ "if",      Type::KwIf      }, { "else",   Type::KwElse   },
-		{ "for",     Type::KwFor     }, { "while",  Type::KwWhile  }, { "break", Type::KwBreak }, { "continue", Type::KwContinue },
-		{ "read",    Type::KwRead    }, { "write",  Type::KwWrite  }, 
-		{ "int",     Type::KwInt     }, { "float", Type::KwFloat },{ "float4", Type::KwFloat4 },
+		{ "if", Type::KwIf }, { "else", Type::KwElse }, { "switch", Type::KwSwitch }, { "case", Type::KwCase }, { "default", Type::KwDefault },
+		{ "while", Type::KwWhile }, { "do", Type::KwDo }, { "for", Type::KwFor },
+		{ "break", Type::KwBreak }, { "continue", Type::KwContinue }, { "return", Type::KwReturn }, { "discard", Type::KwDiscard },
+		{ "typedef", Type::KwTypedef },{ "struct", Type::KwStruct },
+		{ "true", Type::KwTrue }, { "false", Type::KwFalse },
+
+		{ "program", Type::KwProgram },
+		{ "int",     Type::KwInt     }, { "float", Type::KwFloat },{ "float4", Type::KwFloat4 },{ "dword3x2", Type::KwDword3x2 },
 
 		// Preprocessor keywords.
 		{ "define", Type::KwPpDefine }, { "undef",  Type::KwPpUndef  }, { "defined", Type::KwPpDefined },

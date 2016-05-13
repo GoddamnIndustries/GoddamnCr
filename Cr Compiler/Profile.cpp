@@ -70,34 +70,9 @@ namespace Cr
 		return new Ast::TernaryExpression(condExpr, thenExpr, elseExpr);
 	}
 
-	CR_API Ast::ConstantExpression* Profile::CreateConstExpression()
+	CR_API Ast::ConstantExpression* Profile::CreateConstExpression(Ast::Value const& value, Ast::Type const& type)
 	{
-		return new Ast::ConstantExpression();
-	}
-	CR_API Ast::Expression* Profile::CreateConstExpression(bool const valueBool)
-	{
-		return nullptr;
-	//	return new Ast::ConstantExpression(valueBool);
-	}
-	CR_API Ast::Expression* Profile::CreateConstExpression(int32_t const valueInt)
-	{
-		return nullptr;
-		//	return new Ast::ConstantExpression(valueInt);
-	}
-	CR_API Ast::Expression* Profile::CreateConstExpression(uint32_t const valueUInt)
-	{
-		return nullptr;
-		//	return new Ast::ConstantExpression(valueUInt);
-	}
-	CR_API Ast::Expression* Profile::CreateConstExpression(float const valueFloat)
-	{
-		return nullptr;
-		//	return new Ast::ConstantExpression(valueFloat);
-	}
-	CR_API Ast::Expression* Profile::CreateConstExpression(double const valueDouble)
-	{
-		return nullptr;
-		//	return new Ast::ConstantExpression(valueDouble);
+		return new Ast::ConstantExpression(value, type);
 	}
 
 	// *************************************************************** //
@@ -121,13 +96,9 @@ namespace Cr
 	{
 		return new Ast::SwitchSelectionStatement();
 	}
-	CR_API Ast::SwitchCase* Profile::CreateSwitchCase()
+	CR_API Ast::SwitchSection* Profile::CreateSwitchSection()
 	{
-		return new Ast::SwitchCase();
-	}
-	CR_API Ast::SwitchDefaultCase* Profile::CreateSwitchDefaultCase()
-	{
-		return new Ast::SwitchDefaultCase();
+		return new Ast::SwitchSection();
 	}
 
 	CR_API Ast::DoWhileIterationStatement* Profile::CreateDoIterationStatement()

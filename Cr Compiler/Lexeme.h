@@ -22,25 +22,30 @@
 /**
  * Substitutes all combination of scalar, vector and matrix types.
  */
-//#define CrType(Type) Type, \
-//	Type##1 = ((int)Type +  1) | CrTypeMaskCreate(1, 1), /**/ Type##1x1 = ((int)Type +  2) | CrTypeMaskCreate(1, 1), /**/ Type##1x2 = ((int)Type +  3) | CrTypeMaskCreate(1, 2), Type##1x3 = ((int)Type +  4) | CrTypeMaskCreate(1, 3), Type##1x4 = ((int)Type + 5) | CrTypeMaskCreate(1, 4), \
-//	Type##2 = ((int)Type +  6) | CrTypeMaskCreate(2, 1), /**/ Type##2x1 = ((int)Type +  7) | CrTypeMaskCreate(2, 1), /**/ Type##2x2 = ((int)Type +  8) | CrTypeMaskCreate(2, 2), Type##2x3 = ((int)Type +  9) | CrTypeMaskCreate(1, 3), Type##1x4 = ((int)Type + 9) | CrTypeMaskCreate(1, 4), \
-//	Type##2 = ((int)Type + 11) | CrTypeMaskCreate(3, 1), /**/ Type##3x1 = ((int)Type + 12) | CrTypeMaskCreate(3, 1), /**/ Type##3x2 = ((int)Type + 13) | CrTypeMaskCreate(3, 2), Type##3x3 = ((int)Type + 14) | CrTypeMaskCreate(1, 3), Type##1x4 = ((int)Type + 9) | CrTypeMaskCreate(1, 4), \
-//	Type##2 = ((int)Type + 15) | CrTypeMaskCreate(4, 1), /**/ Type##4x1 = ((int)Type + 17) | CrTypeMaskCreate(4, 1), /**/ Type##4x2 = ((int)Type + 18) | CrTypeMaskCreate(4, 2), Type##4x3 = ((int)Type + 19) | CrTypeMaskCreate(1, 3), Type##1x4 = ((int)Type + 9) | CrTypeMaskCreate(1, 4), 
-#define CrType(Type) Type, \
+#define CrTypeMxN(Type) Type, \
 	Type##1, Type##1x1, Type##1x2, Type##1x3, Type##1x4, \
 	Type##2, Type##2x1, Type##2x2, Type##2x3, Type##2x4, \
 	Type##3, Type##3x1, Type##3x2, Type##3x3, Type##3x4, \
 	Type##4, Type##4x1, Type##4x2, Type##4x3, Type##4x4
-
 /**
  * Substitutes all combination of scalar, vector and matrix types for 'switch' statement.
  */
-#define CrCaseType(Type) Type: \
+#define CrCaseTypeMxN(Type) Type: \
 	case Type##1: case Type##1x1: case Type##1x2: case Type##1x3: case Type##1x4: \
 	case Type##2: case Type##2x1: case Type##2x2: case Type##2x3: case Type##2x4: \
 	case Type##3: case Type##3x1: case Type##3x2: case Type##3x3: case Type##3x4: \
 	case Type##4: case Type##4x1: case Type##4x2: case Type##4x3: case Type##4x4
+
+/**
+ * Substitutes all combination of sampler and texture types.
+ */
+#define CrTypeND(Type) \
+	Type##1D, Type##2D, Type##3D, Type##CUBE, \
+/**
+ * Substitutes all combination of sampler and texture types for 'switch' statement.
+ */
+#define CrCaseTypeND(Type) \
+	Type##1D: case Type##2D: case Type##3D: case Type##CUBE \
 
 namespace Cr
 {
@@ -56,54 +61,33 @@ namespace Cr
 	public:
 		enum class Type
 		{
-			Null = 0,
+			Null = 0, NewLine,
 			IdIdentifier,
-			CtInt, CtUInt, CtDword = CtUInt, CtHalf, CtFloat, CtDouble,
+			CtInt, CtUInt, CtDword = CtUInt, CtFloat, CtDouble,
 
 			// Keywords.
-			/*
-			bool
-			break
-			char
+			/*	<-- HLSL keywords that should be added.
 			column_major
 			compile
 			const
-			continue
 			discard
-			do
-			double
-			dword*
-			else
 			emit
 			extern
-			false
 			fixed
-			float*
-			for
 			get
 			half
-			if
 			in
 			inline
 			inout
-			int
-			long
-			matrix*
 			out
 			packed
 			pass*
 			pixelfragment*
 			pixelshader*
-			return
 			row_major
 			sampler
 			sampler_state
-			sampler1D
-			sampler2D
-			sampler3D
-			samplerCUBE
 			shared
-			short
 			sizeof
 			static
 			static_cast
@@ -111,31 +95,20 @@ namespace Cr
 			technique*
 			template
 			texture*
-			texture1D
-			texture2D
-			texture3D
-			textureCUBE
-			textureRECT
-			true
-			typedef
 			uniform
-			unsigned
-			vector*
 			vertexfragment*
 			vertexshader*
-			void
 			volatile
-			while
 			*/
-			KwProgram,
-			KwDiscard,
+		/**/	KwProgram,
+			
 			KwIf, KwElse, KwSwitch, KwCase, KwDefault,
-			KwDo, KwFor, KwWhile, KwBreak, KwContinue, KwReturn,
-			KwRead, KwWrite,
-			KwTypedef, KwStruct,
-			KwVoid, CrType(KwBool), CrType(KwInt), CrType(KwUInt), CrType(KwDword), CrType(KwHalf), CrType(KwFloat), CrType(KwDouble),
+			KwWhile, KwDo, KwFor,
+			KwBreak, KwContinue, KwReturn, KwDiscard,
+			KwTypedef, KwStruct, 
+			KwSampler1D, KwSampler2D, KwSampler3D, KwSamplerCUBE, KwTexture1D, KwTexture2D, KwTexture3D, KwTextureCUBE, KwTextureRECT,
+			KwVoid, CrTypeMxN(KwBool), CrTypeMxN(KwInt), CrTypeMxN(KwUInt), CrTypeMxN(KwDword), CrTypeMxN(KwFloat), CrTypeMxN(KwDouble),
 			KwTrue, KwFalse,
-			KwReal,
 
 			// Preprocessor keywords.
 			KwPpDefine, KwPpUndef, KwPpDefined,
@@ -151,7 +124,7 @@ namespace Cr
 			OpAddAssign, OpSubtractAssign, OpMultiplyAssign, OpDivideAssign, OpModuloAssign, OpBitwiseAndAssign, OpBitwiseOrAssign, OpBitwiseXorAssign, OpBitwiseLeftShiftAssign, OpBitwiseRightShiftAssign,
 			OpBraceOpen, OpBraceClose, OpBracketOpen, OpBracketClose, OpParenOpen, OpParenClose,
 			OpSemicolon, OpColon, OpComma, OpDot, OpTernary,
-			OpPreprocessor, OpPreprocessorGlue,
+			OpPreprocessor, OpPreprocessorConcat,
 
 		}; // enum class Type
 
@@ -160,7 +133,7 @@ namespace Cr
 
 	private:
 		Type        m_Type = Type::Null;
-		int32_t     m_ValueInt = 0;
+		uint32_t     m_ValueInt = 0;
 		std::string m_ValueString;
 		double      m_ValueReal = 0.0;
 		PIdentifier m_ValueID = nullptr;
@@ -174,7 +147,7 @@ namespace Cr
 		explicit Lexeme(Type const type = Type::Null)
 			: m_Type(type)
 		{
-			assert(type == Type::Null || type >= Type::KwProgram);
+			assert(type <= Type::NewLine || type >= Type::KwProgram);
 		}
 
 		/**
@@ -182,11 +155,11 @@ namespace Cr
 		 * @param value The value of lexem.
 		 */
 		/// @{
-		explicit Lexeme(int32_t const value)
-			: m_Type(Type::CtInt), m_ValueInt(value)
+		explicit Lexeme(Type const type, uint32_t const value)
+			: m_Type(type), m_ValueInt(value)
 		{}
-		explicit Lexeme(double const value)
-			: m_Type(Type::CtDouble), m_ValueReal(value)
+		explicit Lexeme(Type const type, double const value)
+			: m_Type(type), m_ValueReal(value)
 		{}
 		explicit Lexeme(PIdentifier const& value)
 			: m_Type(Type::IdIdentifier), m_ValueID(value)
@@ -219,7 +192,7 @@ namespace Cr
 			assert(m_Type == Type::CtInt);
 			return m_ValueInt;
 		}
-		double GetValueDouble() const
+		double GetValueReal() const
 		{
 			assert(m_Type == Type::CtDouble);
 			return m_ValueReal;
