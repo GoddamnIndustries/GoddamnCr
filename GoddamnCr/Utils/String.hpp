@@ -11,10 +11,23 @@
 //                                                                     //
 // $$***************************************************************$$ //
 
-/**
- * Entry point for the whole "C for Rendering" shader compiler.
- */
-int main(int const argc, char const* const* const argv)
+#pragma once
+
+#include <string>
+#include <cassert>
+
+namespace Cr
 {
-	return 0;
-}
+	typedef int Char;
+	typedef char const* CStr;
+	typedef std::string String;
+	typedef std::string StringBuilder;
+
+	struct StringSlice
+	{
+		static StringSlice Empty;
+
+		CStr Start, End;
+	};	// struct StringSlice
+
+}	// namespace Cr

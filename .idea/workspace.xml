@@ -17,17 +17,10 @@
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/Cr Compiler/AST.cpp" afterPath="$PROJECT_DIR$/Cr Compiler/AST.cpp" />
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/Cr Compiler/AST.h" afterPath="$PROJECT_DIR$/Cr Compiler/AST.h" />
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/Cr Compiler/Cr Compiler.vcxproj" afterPath="$PROJECT_DIR$/Cr Compiler/Cr Compiler.vcxproj" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/Cr Compiler/Cr Compiler.vcxproj.filters" afterPath="$PROJECT_DIR$/Cr Compiler/Cr Compiler.vcxproj.filters" />
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/Cr Compiler/Lexeme.cpp" afterPath="$PROJECT_DIR$/Cr Compiler/Lexeme.cpp" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/Cr Compiler/Lexeme.h" afterPath="$PROJECT_DIR$/Cr Compiler/Lexeme.h" />
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/Cr Compiler/Parser.cpp" afterPath="$PROJECT_DIR$/Cr Compiler/Parser.cpp" />
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/Cr Compiler/Parser.h" afterPath="$PROJECT_DIR$/Cr Compiler/Parser.h" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/Cr Compiler/Preprocessor.cpp" afterPath="$PROJECT_DIR$/Cr Compiler/Preprocessor.cpp" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/Cr Compiler/Preprocessor.h" afterPath="$PROJECT_DIR$/Cr Compiler/Preprocessor.h" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/Cr Compiler/Profile.cpp" afterPath="$PROJECT_DIR$/Cr Compiler/Profile.cpp" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/Cr Compiler/Profile.h" afterPath="$PROJECT_DIR$/Cr Compiler/Profile.h" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/Cr Compiler/Scanner.cpp" afterPath="$PROJECT_DIR$/Cr Compiler/Scanner.cpp" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/Cr Compiler/Scanner.h" afterPath="$PROJECT_DIR$/Cr Compiler/Scanner.h" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/Cr Compiler/TestShader.fx" afterPath="$PROJECT_DIR$/Cr Compiler/TestShader.fx" />
     </list>
     <ignored path="GoddamnCr.iws" />
     <ignored path=".idea/workspace.xml" />
@@ -51,8 +44,8 @@
       <file leaf-file-name="Parser.h" pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/Cr Compiler/Parser.h">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="204">
-              <caret line="12" column="0" selection-start-line="12" selection-start-column="0" selection-end-line="12" selection-end-column="0" />
+            <state relative-caret-position="289">
+              <caret line="17" column="0" selection-start-line="17" selection-start-column="0" selection-end-line="17" selection-end-column="0" />
               <folding />
             </state>
           </provider>
@@ -61,8 +54,8 @@
       <file leaf-file-name="Parser.cpp" pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/Cr Compiler/Parser.cpp">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="527">
-              <caret line="31" column="0" selection-start-line="31" selection-start-column="0" selection-end-line="31" selection-end-column="0" />
+            <state relative-caret-position="544">
+              <caret line="32" column="0" selection-start-line="32" selection-start-column="0" selection-end-line="32" selection-end-column="0" />
               <folding />
             </state>
           </provider>
@@ -71,7 +64,7 @@
       <file leaf-file-name="Preprocessor.cpp" pinned="false" current-in-tab="true">
         <entry file="file://$PROJECT_DIR$/Cr Compiler/Preprocessor.cpp">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="-1938">
+            <state relative-caret-position="694">
               <caret line="123" column="0" selection-start-line="123" selection-start-column="0" selection-end-line="123" selection-end-column="0" />
               <folding />
             </state>
@@ -84,8 +77,8 @@
             <state relative-caret-position="1955">
               <caret line="115" column="8" selection-start-line="115" selection-start-column="8" selection-end-line="115" selection-end-column="8" />
               <folding>
-                <marker date="1462556654827" expanded="false" signature="911:949" placeholder="..." />
-                <marker date="1462556654827" expanded="true" signature="2303:2395" placeholder="{...}" />
+                <marker date="1463125511265" expanded="false" signature="911:949" ph="..." />
+                <marker date="1463125511265" expanded="true" signature="2303:2395" ph="{...}" />
               </folding>
             </state>
           </provider>
@@ -122,10 +115,10 @@
         <option value="$PROJECT_DIR$/Cr Compiler/Scanner.cpp" />
         <option value="$PROJECT_DIR$/README.md" />
         <option value="$PROJECT_DIR$/LICENSE.md" />
-        <option value="$PROJECT_DIR$/Cr Compiler/AST.h" />
         <option value="$PROJECT_DIR$/Cr Compiler/Parser.h" />
         <option value="$PROJECT_DIR$/Cr Compiler/Parser.cpp" />
         <option value="$PROJECT_DIR$/Cr Compiler/Preprocessor.cpp" />
+        <option value="$PROJECT_DIR$/Cr Compiler/AST.h" />
       </list>
     </option>
   </component>
@@ -184,20 +177,6 @@
               <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode" />
             </PATH_ELEMENT>
           </PATH>
-          <PATH>
-            <PATH_ELEMENT>
-              <option name="myItemId" value="GoddamnCr" />
-              <option name="myItemType" value="com.jetbrains.cidr.projectView.CidrFilesViewHelper$MyProjectTreeStructure$1" />
-            </PATH_ELEMENT>
-            <PATH_ELEMENT>
-              <option name="myItemId" value="GoddamnCr" />
-              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode" />
-            </PATH_ELEMENT>
-            <PATH_ELEMENT>
-              <option name="myItemId" value="Cr Compiler" />
-              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode" />
-            </PATH_ELEMENT>
-          </PATH>
         </subPane>
       </pane>
     </panes>
@@ -206,6 +185,7 @@
     <property name="settings.editor.selected.configurable" value="preferences.sourceCode.C/C++" />
     <property name="settings.editor.splitter.proportion" value="0.2" />
     <property name="WebServerToolWindowFactoryState" value="false" />
+    <property name="last_opened_file_path" value="$PROJECT_DIR$" />
   </component>
   <component name="RunManager" selected="Application.GoddamnCr">
     <configuration default="true" type="CMakeGoogleTestRunConfigurationType" factoryName="Google Test" PASS_PARENT_ENVS_2="true" TEST_MODE="SUITE_TEST">
@@ -399,27 +379,27 @@
     <servers />
   </component>
   <component name="ToolWindowManager">
-    <frame x="-8" y="-8" width="1936" height="1056" extended-state="7" />
-    <editor active="true" />
+    <frame x="-8" y="-8" width="1936" height="1056" extended-state="6" />
+    <editor active="false" />
     <layout>
       <window_info id="Project" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" show_stripe_button="true" weight="0.18541667" sideWeight="0.5" order="0" side_tool="false" content_ui="combo" />
       <window_info id="TODO" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="6" side_tool="false" content_ui="tabs" />
+      <window_info id="Messages" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" show_stripe_button="true" weight="0.20084566" sideWeight="0.49791667" order="7" side_tool="false" content_ui="tabs" />
       <window_info id="CMake" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.329602" sideWeight="0.5" order="11" side_tool="false" content_ui="tabs" />
       <window_info id="Event Log" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.20084566" sideWeight="0.50208336" order="8" side_tool="true" content_ui="tabs" />
       <window_info id="Version Control" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="9" side_tool="false" content_ui="tabs" />
+      <window_info id="Run" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.329602" sideWeight="0.5" order="2" side_tool="false" content_ui="tabs" />
       <window_info id="Structure" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.25" sideWeight="0.5" order="1" side_tool="false" content_ui="tabs" />
       <window_info id="Terminal" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="10" side_tool="false" content_ui="tabs" />
       <window_info id="Favorites" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="2" side_tool="true" content_ui="tabs" />
+      <window_info id="Debug" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.39925373" sideWeight="0.5" order="3" side_tool="false" content_ui="tabs" />
       <window_info id="Cvs" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.25" sideWeight="0.5" order="4" side_tool="false" content_ui="tabs" />
-      <window_info id="Messages" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.20084566" sideWeight="0.49791667" order="7" side_tool="false" content_ui="tabs" />
       <window_info id="Message" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="0" side_tool="false" content_ui="tabs" />
       <window_info id="Commander" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.4" sideWeight="0.5" order="0" side_tool="false" content_ui="tabs" />
       <window_info id="Inspection" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.4" sideWeight="0.5" order="5" side_tool="false" content_ui="tabs" />
-      <window_info id="Run" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.329602" sideWeight="0.5" order="2" side_tool="false" content_ui="tabs" />
       <window_info id="Hierarchy" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.25" sideWeight="0.5" order="2" side_tool="false" content_ui="combo" />
       <window_info id="Find" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="1" side_tool="false" content_ui="tabs" />
       <window_info id="Ant Build" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.25" sideWeight="0.5" order="1" side_tool="false" content_ui="tabs" />
-      <window_info id="Debug" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.39925373" sideWeight="0.5" order="3" side_tool="false" content_ui="tabs" />
     </layout>
   </component>
   <component name="Vcs.Log.UiProperties">
@@ -440,27 +420,30 @@
     <watches-manager />
   </component>
   <component name="editorHistoryManager">
-    <entry file="file://$PROJECT_DIR$/Cr Compiler/Parser.h">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="255">
-          <caret line="15" column="0" selection-start-line="15" selection-start-column="0" selection-end-line="15" selection-end-column="0" />
-          <folding />
-        </state>
-      </provider>
-    </entry>
     <entry file="file://$PROJECT_DIR$/Cr Compiler/Parser.cpp">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="527">
-          <caret line="31" column="0" selection-start-line="31" selection-start-column="0" selection-end-line="31" selection-end-column="0" />
+        <state relative-caret-position="544">
+          <caret line="32" column="0" selection-start-line="32" selection-start-column="0" selection-end-line="32" selection-end-column="0" />
           <folding />
         </state>
       </provider>
     </entry>
     <entry file="file://$PROJECT_DIR$/Cr Compiler/Preprocessor.cpp">
       <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="2091">
+          <caret line="123" column="0" selection-start-line="123" selection-start-column="0" selection-end-line="123" selection-end-column="0" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/Cr Compiler/AST.h">
+      <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="0">
           <caret line="0" column="0" selection-start-line="0" selection-start-column="0" selection-end-line="0" selection-end-column="0" />
-          <folding />
+          <folding>
+            <marker date="1463174407944" expanded="true" signature="7401:7431" ph="{...}" />
+            <marker date="1463174407944" expanded="true" signature="38336:38340" ph="{...}" />
+          </folding>
         </state>
       </provider>
     </entry>
@@ -469,8 +452,8 @@
         <state relative-caret-position="1955">
           <caret line="115" column="8" selection-start-line="115" selection-start-column="8" selection-end-line="115" selection-end-column="8" />
           <folding>
-            <marker date="1462556654827" expanded="false" signature="911:949" placeholder="..." />
-            <marker date="1462556654827" expanded="true" signature="2303:2395" placeholder="{...}" />
+            <marker date="1463125511265" expanded="false" signature="911:949" ph="..." />
+            <marker date="1463125511265" expanded="true" signature="2303:2395" ph="{...}" />
           </folding>
         </state>
       </provider>
@@ -515,8 +498,54 @@
         <state relative-caret-position="1955">
           <caret line="115" column="8" selection-start-line="115" selection-start-column="8" selection-end-line="115" selection-end-column="8" />
           <folding>
-            <marker date="1462556654827" expanded="false" signature="911:949" placeholder="..." />
-            <marker date="1462556654827" expanded="true" signature="2303:2395" placeholder="{...}" />
+            <marker date="1463125511265" expanded="false" signature="911:949" ph="..." />
+            <marker date="1463125511265" expanded="true" signature="2303:2395" ph="{...}" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/README.md">
+      <provider selected="true" editor-type-id="split-provider[text-editor;markdown-preview-editor]">
+        <state split_layout="SPLIT">
+          <first_editor relative-caret-position="510">
+            <caret line="30" column="0" selection-start-line="30" selection-start-column="0" selection-end-line="30" selection-end-column="0" />
+            <folding />
+          </first_editor>
+          <second_editor />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/Cr Compiler/Parser.h">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="255">
+          <caret line="15" column="0" selection-start-line="15" selection-start-column="0" selection-end-line="15" selection-end-column="0" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/Cr Compiler/Parser.cpp">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="527">
+          <caret line="31" column="0" selection-start-line="31" selection-start-column="0" selection-end-line="31" selection-end-column="0" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/Cr Compiler/Preprocessor.cpp">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="0">
+          <caret line="0" column="0" selection-start-line="0" selection-start-column="0" selection-end-line="0" selection-end-column="0" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/Cr Compiler/Utils.h">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="1955">
+          <caret line="115" column="8" selection-start-line="115" selection-start-column="8" selection-end-line="115" selection-end-column="8" />
+          <folding>
+            <marker date="1463125511265" expanded="false" signature="911:949" ph="..." />
+            <marker date="1463125511265" expanded="true" signature="2303:2395" ph="{...}" />
           </folding>
         </state>
       </provider>
@@ -559,7 +588,6 @@
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="1003">
           <caret line="59" column="8" selection-start-line="59" selection-start-column="8" selection-end-line="59" selection-end-column="8" />
-          <folding />
         </state>
       </provider>
     </entry>
@@ -581,7 +609,6 @@
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="165">
           <caret line="11" column="14" selection-start-line="11" selection-start-column="14" selection-end-line="11" selection-end-column="14" />
-          <folding />
         </state>
       </provider>
     </entry>
@@ -604,7 +631,6 @@
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="840">
           <caret line="56" column="0" selection-start-line="56" selection-start-column="0" selection-end-line="56" selection-end-column="0" />
-          <folding />
         </state>
       </provider>
     </entry>
@@ -613,8 +639,8 @@
         <state relative-caret-position="690">
           <caret line="46" column="24" selection-start-line="46" selection-start-column="24" selection-end-line="46" selection-end-column="24" />
           <folding>
-            <marker date="1462556654827" expanded="false" signature="911:949" placeholder="..." />
-            <marker date="1462556654827" expanded="true" signature="2303:2395" placeholder="{...}" />
+            <marker date="1463125511265" expanded="false" signature="911:949" ph="..." />
+            <marker date="1463125511265" expanded="true" signature="2303:2395" ph="{...}" />
           </folding>
         </state>
       </provider>
@@ -656,7 +682,6 @@
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="180">
           <caret line="12" column="14" selection-start-line="12" selection-start-column="14" selection-end-line="12" selection-end-column="14" />
-          <folding />
         </state>
       </provider>
     </entry>
@@ -671,7 +696,6 @@
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="1326">
           <caret line="83" column="8" selection-start-line="83" selection-start-column="8" selection-end-line="83" selection-end-column="8" />
-          <folding />
         </state>
       </provider>
     </entry>
@@ -718,8 +742,8 @@
         <state relative-caret-position="1955">
           <caret line="115" column="8" selection-start-line="115" selection-start-column="8" selection-end-line="115" selection-end-column="8" />
           <folding>
-            <marker date="1462556654827" expanded="false" signature="911:949" placeholder="..." />
-            <marker date="1462556654827" expanded="true" signature="2303:2395" placeholder="{...}" />
+            <marker date="1463125511265" expanded="false" signature="911:949" ph="..." />
+            <marker date="1463125511265" expanded="true" signature="2303:2395" ph="{...}" />
           </folding>
         </state>
       </provider>
@@ -738,13 +762,6 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/Cr Compiler/AST.h">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="9520">
-          <caret line="560" column="0" selection-start-line="560" selection-start-column="0" selection-end-line="560" selection-end-column="0" />
-        </state>
-      </provider>
-    </entry>
     <entry file="file://$PROJECT_DIR$/README.md">
       <provider selected="true" editor-type-id="split-provider[text-editor;markdown-preview-editor]">
         <state split_layout="SPLIT">
@@ -758,23 +775,34 @@
     </entry>
     <entry file="file://$PROJECT_DIR$/Cr Compiler/Parser.cpp">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="527">
-          <caret line="31" column="0" selection-start-line="31" selection-start-column="0" selection-end-line="31" selection-end-column="0" />
+        <state relative-caret-position="544">
+          <caret line="32" column="0" selection-start-line="32" selection-start-column="0" selection-end-line="32" selection-end-column="0" />
           <folding />
         </state>
       </provider>
     </entry>
     <entry file="file://$PROJECT_DIR$/Cr Compiler/Parser.h">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="204">
-          <caret line="12" column="0" selection-start-line="12" selection-start-column="0" selection-end-line="12" selection-end-column="0" />
+        <state relative-caret-position="289">
+          <caret line="17" column="0" selection-start-line="17" selection-start-column="0" selection-end-line="17" selection-end-column="0" />
           <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/Cr Compiler/AST.h">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="85">
+          <caret line="116" column="26" selection-start-line="116" selection-start-column="26" selection-end-line="116" selection-end-column="26" />
+          <folding>
+            <marker date="1463174407944" expanded="true" signature="7401:7431" ph="{...}" />
+            <marker date="1463174407944" expanded="true" signature="38336:38340" ph="{...}" />
+          </folding>
         </state>
       </provider>
     </entry>
     <entry file="file://$PROJECT_DIR$/Cr Compiler/Preprocessor.cpp">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="-1938">
+        <state relative-caret-position="694">
           <caret line="123" column="0" selection-start-line="123" selection-start-column="0" selection-end-line="123" selection-end-column="0" />
           <folding />
         </state>

@@ -1,0 +1,44 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <ClCompile Include="Compiler.cpp" />
+    <ClCompile Include="Lexer\Lexer.cpp">
+      <Filter>Lexer</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="Error.hpp" />
+    <ClInclude Include="Lexer\Lexer.hpp">
+      <Filter>Lexer</Filter>
+    </ClInclude>
+    <ClInclude Include="Lexer\LexerKeywords.hxx">
+      <Filter>Lexer</Filter>
+    </ClInclude>
+    <ClInclude Include="Utils\String.hpp">
+      <Filter>Utils</Filter>
+    </ClInclude>
+    <ClInclude Include="Lexer\AbstractLexer.hpp">
+      <Filter>Lexer</Filter>
+    </ClInclude>
+    <ClInclude Include="Syntax\SyntaxFactory.hpp">
+      <Filter>Syntax</Filter>
+    </ClInclude>
+    <ClInclude Include="Utils\half.hpp">
+      <Filter>Utils</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <FxCompile Include="VertexShader.hlsl" />
+  </ItemGroup>
+  <ItemGroup>
+    <Filter Include="Lexer">
+      <UniqueIdentifier>{31d4e01f-1d8a-4b18-89ab-46c713fb5225}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Utils">
+      <UniqueIdentifier>{b93ef4b4-9dd6-44a9-bc7c-06dc1d3671f6}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Syntax">
+      <UniqueIdentifier>{6c30078f-915c-4de7-b02f-bdf7df5a2acc}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+</Project>
